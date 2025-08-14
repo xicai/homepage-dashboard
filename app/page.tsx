@@ -437,14 +437,23 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
     setIsUploading(true)
     setUploadProgress(0)
 
-    // 模拟上传过程
+    // 处理文件上传
     const totalFiles = files.length
     let uploadedCount = 0
     const newBookmarks = []
 
     for (const file of files) {
+      // 将文件转换为base64格式以便持久保存
+      const base64Image = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          resolve(e.target?.result as string)
+        }
+        reader.readAsDataURL(file)
+      })
+
       // 模拟上传延迟
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, 300))
       
       // 创建新的书签对象
       const newBookmark = {
@@ -453,7 +462,7 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
         url: "",
         description: `Uploaded image: ${file.name}`,
         favicon: "/placeholder.svg?height=32&width=32",
-        screenshot: URL.createObjectURL(file),
+        screenshot: base64Image, // 使用base64格式保存图片
         category: "Uploaded",
         priority: "medium",
         tags: ["upload", "image"],
