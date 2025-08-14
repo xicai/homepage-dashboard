@@ -34,6 +34,7 @@ export function ConfigGenerator({ onConfigGenerated }: ConfigGeneratorProps) {
   const [showToken, setShowToken] = useState(false)
   const [encryptedConfig, setEncryptedConfig] = useState('')
   const [copied, setCopied] = useState(false)
+  const [urlCopied, setUrlCopied] = useState(false)
   const [validationError, setValidationError] = useState('')
 
   const handleGenerate = () => {
@@ -77,6 +78,26 @@ export function ConfigGenerator({ onConfigGenerated }: ConfigGeneratorProps) {
     }
   }
 
+  const handleCopyUrl = async () => {
+    try {
+      const currentUrl = window.location.origin + window.location.pathname
+      const configUrl = `${currentUrl}#${encryptedConfig}`
+      await navigator.clipboard.writeText(configUrl)
+      setUrlCopied(true)
+      setTimeout(() => setUrlCopied(false), 2000)
+    } catch (error) {
+      console.error('复制URL失败:', error)
+    }
+  }
+
+  const generateConfigUrl = () => {
+    if (typeof window !== 'undefined') {
+      const currentUrl = window.location.origin + window.location.pathname
+      return `${currentUrl}#${encryptedConfig}`
+    }
+    return ''
+  }
+
   const handleClear = () => {
     setFormData({
       token: '',
@@ -87,6 +108,7 @@ export function ConfigGenerator({ onConfigGenerated }: ConfigGeneratorProps) {
     setEncryptedConfig('')
     setValidationError('')
     setCopied(false)
+    setUrlCopied(false)
   }
 
   const handleClose = () => {
@@ -262,13 +284,37 @@ export function ConfigGenerator({ onConfigGenerated }: ConfigGeneratorProps) {
                   </div>
                 </div>
 
+                <div>
+                  <Label>配置URL（直接分享链接）</Label>
+                  <div className="relative">
+                    <Input
+                      value={generateConfigUrl()}
+                      readOnly
+                      className="pr-12 font-mono text-sm"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopyUrl}
+                        className="h-8 px-2"
+                        title="复制URL到剪贴板"
+                      >
+                        {urlCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    分享此链接，其他浏览器访问后会自动导入配置
+                  </p>
+                </div>
+
                 <Alert>
                   <Key className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>使用说明：</strong><br />
-                    1. 复制上面的加密配置字符串<br />
-                    2. 在上传图片时粘贴到"加密配置字符串"输入框<br />
-                    3. 保存配置即可开始上传图片到GitHub
+                    <strong>使用方式：</strong><br />
+                    <strong>方式一（直接分享）：</strong>复制"配置URL"分享给其他人，对方访问链接后会自动导入配置<br />
+                    <strong>方式二（手动导入）：</strong>复制"加密后的配置"字符串，在上传图片时粘贴到配置输入框
                   </AlertDescription>
                 </Alert>
 

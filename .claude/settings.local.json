@@ -10,7 +10,8 @@
       "Bash(npx tsc:*)",
       "Bash(timeout 300 npm run export)",
       "Bash(rm:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

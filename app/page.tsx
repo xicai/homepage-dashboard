@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { features } from "@/lib/config"
 import SimpleBulkUploadDialog from "@/components/simple-bulk-upload"
+import { ConfigGenerator } from "@/components/config-generator"
 import {
   Search,
   Grid3X3,
@@ -1109,74 +1110,189 @@ export default function HomePage() {
   const [bookmarkToDelete, setBookmarkToDelete] = useState<number | null>(null)
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
 
-  // 从JSON文件和localStorage加载图片数据
+  // 检查URL hash中的配置并处理
+  useEffect(() => {
+    const handleUrlConfig = async () => {
+      // 检查hash参数
+      const hash = window.location.hash
+      let configParam = null
+      
+      if (hash) {
+        // 支持两种格式：#config=xxx 或 #xxx（直接是配置字符串）
+        if (hash.startsWith('#config=')) {
+          configParam = hash.substring(8) // 去掉 '#config='
+        } else if (hash.length > 1) {
+          configParam = hash.substring(1) // 去掉 '#'
+        }
+      }
+      
+      // 如果hash没有配置，也检查查询参数（向后兼容）
+      if (!configParam) {
+        const urlParams = new URLSearchParams(window.location.search)
+        configParam = urlParams.get('config')
+      }
+      
+      if (configParam) {
+        console.log('🔗 检测到URL配置参数')
+        try {
+          // 动态导入配置验证函数
+          const { validateEncryptedConfig } = await import('@/lib/config-crypto')
+          if (validateEncryptedConfig(configParam)) {
+            localStorage.setItem('github-encrypted-config', configParam)
+            console.log('✅ GitHub配置已从URL保存到localStorage')
+            
+            // 清除URL参数和hash，避免配置泄露
+            const newUrl = window.location.pathname
+            window.history.replaceState({}, document.title, newUrl)
+            
+            alert('配置已成功导入！现在可以使用GitHub上传功能。')
+          } else {
+            console.error('❌ URL配置参数无效')
+            alert('URL中的配置参数无效，请检查配置字符串。')
+          }
+        } catch (error) {
+          console.error('❌ 处理URL配置失败:', error)
+        }
+      }
+    }
+
+    handleUrlConfig()
+  }, [])
+
+  // 从配置文件和localStorage加载书签数据
   useEffect(() => {
     const loadBookmarks = async () => {
       console.log('🔄 开始加载书签数据...')
       
       try {
-        // 首先尝试从JSON文件加载数据（跨浏览器共享）
-        console.log('📄 尝试从JSON文件加载数据...')
-        const response = await fetch('./data/bookmarks.json')
-        if (response.ok) {
-          const jsonData = await response.json()
-          console.log('✅ 成功从JSON文件加载数据，书签数量:', jsonData.length)
+        // 首先尝试从GitHub配置文件加载数据（跨浏览器共享）
+        await loadFromGitHub()
+      } catch (error) {
+        console.log('⚠️ 无法从GitHub加载，尝试本地配置文件...')
+        
+        try {
+          // 尝试从本地配置文件加载
+          const response = await fetch('./data/bookmarks.json')
+          if (response.ok) {
+            const configData = await response.json()
+            const jsonData = configData.bookmarks || configData // 兼容旧格式
+            console.log('✅ 成功从本地配置文件加载数据，书签数量:', jsonData.length)
+            
+            // 检查localStorage是否有更新的数据
+            const savedBookmarks = localStorage.getItem('bookmarks')
+            if (savedBookmarks) {
+              try {
+                const localData = JSON.parse(savedBookmarks)
+                const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
+                const jsonTimestamp = localStorage.getItem('json_timestamp') || '0'
+                
+                // 如果localStorage数据更新，使用localStorage数据
+                if (localData.length > jsonData.length || localTimestamp > jsonTimestamp) {
+                  console.log('📱 使用localStorage数据（更新）')
+                  setBookmarks(localData)
+                } else {
+                  console.log('📄 使用本地配置文件数据（最新）')
+                  setBookmarks(jsonData)
+                  // 同步到localStorage
+                  localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+                  localStorage.setItem('json_timestamp', Date.now().toString())
+                }
+              } catch (error) {
+                console.error('❌ 解析localStorage数据失败:', error)
+                setBookmarks(jsonData)
+              }
+            } else {
+              console.log('📄 首次加载，使用本地配置文件数据')
+              setBookmarks(jsonData)
+              localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+              localStorage.setItem('json_timestamp', Date.now().toString())
+            }
+          } else {
+            throw new Error('无法加载本地配置文件')
+          }
+        } catch (error) {
+          console.log('⚠️ 无法从配置文件加载，尝试localStorage...')
           
-          // 检查localStorage是否有更新的数据
+          // 回退到localStorage
           const savedBookmarks = localStorage.getItem('bookmarks')
           if (savedBookmarks) {
             try {
-              const localData = JSON.parse(savedBookmarks)
-              const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
-              const jsonTimestamp = localStorage.getItem('json_timestamp') || '0'
-              
-              // 如果localStorage数据更新，使用localStorage数据
-              if (localData.length > jsonData.length || localTimestamp > jsonTimestamp) {
-                console.log('📱 使用localStorage数据（更新）')
-                setBookmarks(localData)
-              } else {
-                console.log('📄 使用JSON文件数据（最新）')
-                setBookmarks(jsonData)
-                // 同步到localStorage
-                localStorage.setItem('bookmarks', JSON.stringify(jsonData))
-                localStorage.setItem('json_timestamp', Date.now().toString())
-              }
+              const parsed = JSON.parse(savedBookmarks)
+              console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
+              setBookmarks(parsed)
             } catch (error) {
               console.error('❌ 解析localStorage数据失败:', error)
-              setBookmarks(jsonData)
+              setBookmarks(mockBookmarks)
             }
           } else {
-            console.log('📄 首次加载，使用JSON文件数据')
-            setBookmarks(jsonData)
-            localStorage.setItem('bookmarks', JSON.stringify(jsonData))
-            localStorage.setItem('json_timestamp', Date.now().toString())
-          }
-        } else {
-          throw new Error('无法加载JSON文件')
-        }
-      } catch (error) {
-        console.log('⚠️ 无法从JSON文件加载，尝试localStorage...')
-        
-        // 回退到localStorage
-        const savedBookmarks = localStorage.getItem('bookmarks')
-        if (savedBookmarks) {
-          try {
-            const parsed = JSON.parse(savedBookmarks)
-            console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
-            setBookmarks(parsed)
-          } catch (error) {
-            console.error('❌ 解析localStorage数据失败:', error)
+            console.log('⚠️ 没有任何保存的数据，使用默认数据')
             setBookmarks(mockBookmarks)
           }
-        } else {
-          console.log('⚠️ 没有任何保存的数据，使用默认数据')
-          setBookmarks(mockBookmarks)
         }
       }
     }
     
     loadBookmarks()
   }, [])
+
+  // 从GitHub加载配置的函数
+  const loadFromGitHub = async () => {
+    const encryptedConfig = localStorage.getItem('github-encrypted-config')
+    if (!encryptedConfig) {
+      throw new Error('未配置GitHub')
+    }
+
+    console.log('🌐 尝试从GitHub配置文件加载数据...')
+    
+    // 动态导入所需模块
+    const { decryptGitHubConfig } = await import('@/lib/config-crypto')
+    const config = decryptGitHubConfig(encryptedConfig)
+    if (!config) {
+      throw new Error('无法解析GitHub配置')
+    }
+
+    // 从GitHub获取配置文件
+    const githubUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/data/bookmarks.json`
+    const response = await fetch(githubUrl)
+    
+    if (response.ok) {
+      const configData = await response.json()
+      const githubData = configData.bookmarks || configData // 兼容旧格式
+      console.log('✅ 成功从GitHub配置文件加载数据，书签数量:', githubData.length)
+      
+      // 检查localStorage是否有更新的数据
+      const savedBookmarks = localStorage.getItem('bookmarks')
+      if (savedBookmarks) {
+        try {
+          const localData = JSON.parse(savedBookmarks)
+          const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
+          const githubTimestamp = new Date(configData.lastUpdated || 0).getTime().toString()
+          
+          // 如果localStorage数据更新，使用localStorage数据
+          if (localData.length > githubData.length || localTimestamp > githubTimestamp) {
+            console.log('📱 使用localStorage数据（更新）')
+            setBookmarks(localData)
+          } else {
+            console.log('🌐 使用GitHub配置文件数据（最新）')
+            setBookmarks(githubData)
+            // 同步到localStorage
+            localStorage.setItem('bookmarks', JSON.stringify(githubData))
+            localStorage.setItem('github_timestamp', githubTimestamp)
+          }
+        } catch (error) {
+          console.error('❌ 解析localStorage数据失败:', error)
+          setBookmarks(githubData)
+        }
+      } else {
+        console.log('🌐 首次加载，使用GitHub配置文件数据')
+        setBookmarks(githubData)
+        localStorage.setItem('bookmarks', JSON.stringify(githubData))
+        localStorage.setItem('github_timestamp', new Date(configData.lastUpdated || 0).getTime().toString())
+      }
+    } else {
+      throw new Error('无法从GitHub加载配置文件')
+    }
+  }
 
   // 保存书签数据到localStorage和JSON文件
   useEffect(() => {
@@ -1197,26 +1313,87 @@ export default function HomePage() {
     }
   }, [bookmarks])
 
-  // 保存数据到JSON文件的函数
+  // 保存数据到配置文件的函数（支持GitHub同步）
   const saveToJsonFile = async (bookmarksData: any[]) => {
     try {
-      console.log('📄 开始保存到JSON文件...')
-      const response = await fetch('/api/save-bookmarks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookmarksData),
-      })
+      console.log('📄 开始保存书签配置...')
+      
+      // 检查是否为静态模式
+      if (features.fileUpload) {
+        // 服务器模式：使用API保存
+        const response = await fetch('/api/save-bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(bookmarksData),
+        })
 
-      const result = await response.json()
-      if (result.success) {
-        console.log('✅ 成功保存到JSON文件:', result.message)
+        const result = await response.json()
+        if (result.success) {
+          console.log('✅ 成功保存到服务器配置文件:', result.message)
+        } else {
+          console.error('❌ 保存到服务器配置文件失败:', result.error)
+        }
       } else {
-        console.error('❌ 保存到JSON文件失败:', result.error)
+        // 静态模式：尝试同步到GitHub
+        await saveToGitHub(bookmarksData)
       }
     } catch (error) {
-      console.error('❌ 保存到JSON文件时发生错误:', error)
+      console.error('❌ 保存配置文件时发生错误:', error)
+    }
+  }
+
+  // 保存到GitHub的函数
+  const saveToGitHub = async (bookmarksData: any[]) => {
+    try {
+      const encryptedConfig = localStorage.getItem('github-encrypted-config')
+      if (!encryptedConfig) {
+        console.log('⚠️ 未配置GitHub，跳过同步')
+        return
+      }
+
+      console.log('🌐 开始同步到GitHub...')
+      
+      // 动态导入所需模块
+      const [{ decryptGitHubConfig }, { githubUploader }] = await Promise.all([
+        import('@/lib/config-crypto'),
+        import('@/lib/github-uploader')
+      ])
+
+      const config = decryptGitHubConfig(encryptedConfig)
+      if (!config) {
+        console.error('❌ 无法解析GitHub配置')
+        return
+      }
+
+      // 创建配置数据结构
+      const configData = {
+        bookmarks: bookmarksData,
+        lastUpdated: new Date().toISOString(),
+        version: '1.0.0'
+      }
+
+      // 上传到GitHub
+      const result = await githubUploader.uploadFile({
+        token: config.token,
+        owner: config.owner,
+        repo: config.repo,
+        branch: config.branch,
+        path: 'data/bookmarks.json',
+        content: JSON.stringify(configData, null, 2),
+        message: `更新书签配置 - ${new Date().toLocaleString()}`,
+        isBase64: false
+      })
+
+      if (result.success) {
+        console.log('✅ 成功同步到GitHub配置文件')
+        localStorage.setItem('last_github_sync', Date.now().toString())
+      } else {
+        console.error('❌ GitHub同步失败:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ GitHub同步时发生错误:', error)
     }
   }
 
@@ -1552,6 +1729,7 @@ export default function HomePage() {
           )}
         </div>
         <div className="flex space-x-2">
+          <ConfigGenerator />
           <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             批量上传
