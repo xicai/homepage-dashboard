@@ -37,6 +37,14 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 
+// 将 GitHub blob 链接转换为 raw 链接
+function convertGitHubBlobToRaw(url: string): string {
+  if (url && url.includes('github.com') && url.includes('/blob/')) {
+    return url.replace('/blob/', '/raw/')
+  }
+  return url
+}
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -404,7 +412,7 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="relative group">
               <Image
-                src={currentBookmark.screenshot || "/placeholder.svg"}
+                src={convertGitHubBlobToRaw(currentBookmark.screenshot || "/placeholder.svg")}
                 alt={`${currentBookmark.title} screenshot`}
                 width={500}
                 height={400}
@@ -948,7 +956,7 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
       <div className="relative overflow-hidden rounded-lg bg-muted">
         {bookmark.screenshot && bookmark.screenshot !== "/placeholder.svg" ? (
           <Image
-            src={bookmark.screenshot}
+            src={convertGitHubBlobToRaw(bookmark.screenshot)}
             alt={`${bookmark.title} screenshot`}
             width={cardWidth}
             height={0}
