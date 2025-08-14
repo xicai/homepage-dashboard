@@ -3,8 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { features } from "@/lib/config"
 import { EnhancedBulkUploadDialog } from "@/components/enhanced-bulk-upload"
-import GitHubSyncDialog from "@/components/github-sync-dialog"
-import GitHubSyncStatus from "@/components/github-sync-status"
 import {
   Search,
   Grid3X3,
@@ -1126,10 +1124,7 @@ export default function HomePage() {
       console.log('🔄 开始加载书签数据...')
       
       try {
-        // 首先尝试从GitHub同步数据（如果已配置）
-        await tryGitHubSync()
-        
-        // 然后尝试从JSON文件加载数据（跨浏览器共享）
+        // 首先尝试从JSON文件加载数据（跨浏览器共享）
         console.log('📄 尝试从JSON文件加载数据...')
         const response = await fetch('./data/bookmarks.json')
         if (response.ok) {
@@ -1188,51 +1183,11 @@ export default function HomePage() {
         }
       }
     }
-
-    // 尝试从GitHub同步数据
-    const tryGitHubSync = async () => {
-      try {
-        // 动态导入GitHub同步器以避免SSR问题
-        const { githubDataSyncer } = await import('@/lib/github-uploader')
-        
-        // 检查是否有GitHub同步配置
-        const syncConfig = localStorage.getItem('github-sync-config')
-        if (syncConfig) {
-          try {
-            const config = JSON.parse(syncConfig)
-            if (config.token && config.owner && config.repo) {
-              console.log('🔄 检查GitHub是否有数据更新...')
-              
-              // 初始化同步器
-              githubDataSyncer.initConfig(config)
-              
-              // 尝试从GitHub拉取最新数据
-              const result = await githubDataSyncer.syncFromGitHub()
-              if (result.success && result.hasUpdates && result.data) {
-                console.log('✅ 从GitHub同步数据成功，书签数量:', result.data.length)
-                setBookmarks(result.data)
-                
-                // 同步到localStorage
-                localStorage.setItem('bookmarks', JSON.stringify(result.data))
-                localStorage.setItem('bookmarks_timestamp', Date.now().toString())
-                return // 成功同步，跳过后续加载
-              } else if (result.success) {
-                console.log('ℹ️ GitHub数据已是最新')
-              }
-            }
-          } catch (error) {
-            console.log('⚠️ GitHub同步配置解析失败:', error)
-          }
-        }
-      } catch (error) {
-        console.log('⚠️ GitHub同步模块加载失败:', error)
-      }
-    }
     
     loadBookmarks()
   }, [])
 
-  // 保存书签数据到localStorage并尝试同步到JSON文件
+  // 保存书签数据到localStorage
   useEffect(() => {
     console.log('💾 保存书签数据，数量:', bookmarks.length)
     if (bookmarks.length > 0) {
@@ -1241,55 +1196,12 @@ export default function HomePage() {
         localStorage.setItem('bookmarks', JSON.stringify(bookmarks))
         localStorage.setItem('bookmarks_timestamp', Date.now().toString())
         console.log('✅ 书签数据已保存到localStorage')
-        
-        // 尝试自动同步到GitHub（如果已配置且启用）
-        tryAutoSyncToGitHub()
-        
-        // 尝试使用File System Access API保存到JSON文件（跨浏览器同步）
-        if ('showDirectoryPicker' in window && features.fileUpload === false) {
-          // 静态模式下，提供导出功能
-          console.log('📄 静态模式：数据已更新，可使用导出功能同步')
-        }
       } catch (error) {
         console.error('❌ 保存数据失败:', error)
         alert('保存失败，请重试')
       }
     }
   }, [bookmarks])
-
-  // 自动同步到GitHub
-  const tryAutoSyncToGitHub = async () => {
-    try {
-      // 动态导入GitHub同步器
-      const { githubDataSyncer } = await import('@/lib/github-uploader')
-      
-      // 检查是否有GitHub同步配置且启用了自动同步
-      const syncConfig = localStorage.getItem('github-sync-config')
-      if (syncConfig) {
-        try {
-          const config = JSON.parse(syncConfig)
-          if (config.token && config.owner && config.repo && config.autoSync) {
-            console.log('🔄 自动同步到GitHub...')
-            
-            // 初始化同步器
-            githubDataSyncer.initConfig(config)
-            
-            // 上传数据
-            const result = await githubDataSyncer.syncToGitHub(bookmarks)
-            if (result.success) {
-              console.log('✅ 自动同步到GitHub成功')
-            } else {
-              console.log('⚠️ 自动同步到GitHub失败:', result.error)
-            }
-          }
-        } catch (error) {
-          console.log('⚠️ GitHub自动同步配置解析失败:', error)
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ GitHub自动同步模块加载失败:', error)
-    }
-  }
 
   const filteredBookmarks = useMemo(() => {
     return bookmarks
@@ -1588,7 +1500,6 @@ export default function HomePage() {
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold">我的图片</h1>
-          <GitHubSyncStatus />
           {filteredBookmarks.length > 0 && (
             <div className="flex items-center space-x-2">
               <label className="flex items-center space-x-2 cursor-pointer">
@@ -1632,13 +1543,6 @@ export default function HomePage() {
             <Upload className="h-4 w-4 mr-2" />
             批量上传
           </Button>
-          <GitHubSyncDialog 
-            bookmarks={bookmarks}
-            onSyncComplete={(data) => {
-              console.log('🔄 GitHub同步完成，更新书签数据:', data.length)
-              setBookmarks(data)
-            }}
-          />
         </div>
       </div>
 
