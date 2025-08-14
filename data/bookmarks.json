@@ -679,48 +679,8 @@
       "imageWidth": 1920,
       "imageHeight": 1080,
       "aspectRatio": 1.7777777777777777
-    },
-    {
-      "id": 1755187575590,
-      "title": "63cca864034f78f03fbe22477e310a55b2191cea",
-      "url": "https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755187573086.jpg",
-      "description": "上传到GitHub的图片: 63cca864034f78f03fbe22477e310a55b2191cea.jpg",
-      "favicon": "/placeholder.svg",
-      "screenshot": "https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755187573086.jpg",
-      "category": "GitHub图片",
-      "priority": "medium",
-      "tags": [
-        "GitHub",
-        "图片",
-        "上传"
-      ],
-      "lastVisited": "2025-08-14",
-      "visitCount": 0,
-      "status": "active",
-      "notes": "GitHub链接: https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755187573086.jpg",
-      "dateAdded": "2025-08-14",
-      "isFavorite": false,
-      "timeSpent": "0m",
-      "weeklyVisits": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ],
-      "relatedSites": [],
-      "lastUpdate": "2025-08-14T16:06:15.590Z",
-      "siteHealth": "good",
-      "loadTime": "0.5s",
-      "mobileOptimized": true,
-      "additionalImages": [],
-      "imageWidth": 580,
-      "imageHeight": 313,
-      "aspectRatio": 1.8530351437699681
     }
   ],
-  "lastUpdated": "2025-08-14T16:06:15.608Z",
+  "lastUpdated": "2025-08-14T16:06:20.240Z",
   "version": "1.0.0"
 }
