@@ -51,6 +51,14 @@ function fixPaths(dir) {
 const outDir = path.join(__dirname, '../out');
 if (fs.existsSync(outDir)) {
   fixPaths(outDir);
+  
+  // 删除out目录中的bookmarks.json文件
+  const bookmarksPath = path.join(outDir, 'data', 'bookmarks.json');
+  if (fs.existsSync(bookmarksPath)) {
+    fs.unlinkSync(bookmarksPath);
+    console.log('✅ Removed bookmarks.json from build output');
+  }
+  
   console.log('✅ All paths fixed successfully!');
 } else {
   console.log('❌ Out directory not found!');
