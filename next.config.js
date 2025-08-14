@@ -1,14 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 禁用开发模式下的调试面板
-  devIndicators: {
-    buildActivity: false,
-    buildActivityPosition: 'bottom-right',
+  // 静态导出配置
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
   },
-  // 禁用开发工具
+  // GitHub Pages 部署配置
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/homepage-dashboard' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/homepage-dashboard' : '',
+  // 静态导出优化配置
   experimental: {
-    // 禁用开发者工具面板
-    devOverlays: false,
+    // 启用静态导出优化
+    optimizeCss: false,
   },
 }
 

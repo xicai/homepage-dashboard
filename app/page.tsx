@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import { features } from "@/lib/config"
 import {
   Search,
   Grid3X3,
@@ -80,7 +81,58 @@ import {
 } from "@/components/ui/sidebar"
 
 // Mock data for bookmarks with enhanced details
-const mockBookmarks: any[] = []
+const mockBookmarks: any[] = [
+  {
+    id: 1,
+    title: "示例图片 1",
+    url: "",
+    description: "这是一个示例图片，展示应用的基本功能",
+    favicon: "./placeholder.svg",
+    screenshot: "./uploads/example.jpg",
+    category: "示例",
+    priority: "medium",
+    tags: ["示例", "图片", "演示"],
+    lastVisited: new Date().toISOString().split('T')[0],
+    visitCount: 5,
+    status: "active",
+    notes: "这是一个预设的示例图片，用于展示应用功能。您可以上传自己的图片来替换它。",
+    dateAdded: new Date().toISOString().split('T')[0],
+    isFavorite: true,
+    timeSpent: "2m",
+    weeklyVisits: [1, 2, 0, 1, 1, 0, 0],
+    relatedSites: [],
+    lastUpdate: new Date().toISOString(),
+    siteHealth: "good",
+    loadTime: "0.8s",
+    mobileOptimized: true,
+    additionalImages: []
+  },
+  {
+    id: 2,
+    title: "占位图片",
+    url: "",
+    description: "占位图片，用于测试布局效果",
+    favicon: "./placeholder.svg",
+    screenshot: "./placeholder.jpg",
+    category: "测试",
+    priority: "low",
+    tags: ["占位", "测试", "布局"],
+    lastVisited: new Date().toISOString().split('T')[0],
+    visitCount: 2,
+    status: "active",
+    notes: "这是一个占位图片，用于测试应用的布局和显示效果。",
+    dateAdded: new Date().toISOString().split('T')[0],
+    isFavorite: false,
+    timeSpent: "1m",
+    weeklyVisits: [0, 1, 0, 0, 1, 0, 0],
+    relatedSites: [],
+    lastUpdate: new Date().toISOString(),
+    siteHealth: "good",
+    loadTime: "0.5s",
+    mobileOptimized: true,
+    additionalImages: []
+  }
+]
 
 const categories = ["All", "Development", "Design", "Productivity", "Learning", "Entertainment"]
 const priorities = ["All", "High", "Medium", "Low"]
@@ -195,26 +247,97 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
     fileInputRef.current?.click()
   }
 
-  const handleMultipleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string
-          const newAdditionalImages = [...additionalImages, imageUrl]
-          setAdditionalImages(newAdditionalImages)
-          
-          // 立即保存到 bookmark 对象
-          const updatedBookmark = {
-            ...currentBookmark,
-            additionalImages: newAdditionalImages
+      console.log('📤 参考图片风格上传：开始处理文件...')
+      const filesArray = Array.from(files)
+      const newImageUrls: string[] = []
+      
+      // 检查是否为静态导出模式
+      if (!features.fileUpload) {
+        console.log('📤 静态模式：尝试保存参考图片到文件系统...')
+        
+        // 检查是否支持 File System Access API
+        if ('showDirectoryPicker' in window) {
+          try {
+            console.log('📁 弹出文件夹选择对话框（参考图片）...')
+            // 让用户选择 uploads 文件夹
+            const dirHandle = await (window as any).showDirectoryPicker({
+              mode: 'readwrite',
+              startIn: 'downloads'
+            })
+            console.log('✅ 用户选择了文件夹（参考图片）:', dirHandle.name)
+            
+            for (let i = 0; i < filesArray.length; i++) {
+              const file = filesArray[i]
+              const timestamp = Date.now() + i
+              const fileExtension = file.name.split('.').pop()
+              const newFileName = `reference_${timestamp}.${fileExtension}`
+              
+              // 直接保存到选择的文件夹
+              const fileHandle = await dirHandle.getFileHandle(newFileName, { create: true })
+              const writable = await fileHandle.createWritable()
+              await writable.write(file)
+              await writable.close()
+              
+              console.log(`✅ 参考图片已保存: ${newFileName}`)
+              
+              // 使用相对路径引用保存的文件
+              const imageUrl = `./uploads/${newFileName}`
+              newImageUrls.push(imageUrl)
+            }
+            
+            // 更新状态
+            const updatedAdditionalImages = [...additionalImages, ...newImageUrls]
+            setAdditionalImages(updatedAdditionalImages)
+            
+            // 立即保存到 bookmark 对象
+            const updatedBookmark = {
+              ...currentBookmark,
+              additionalImages: updatedAdditionalImages
+            }
+            setCurrentBookmark(updatedBookmark)
+            onUpdateBookmark(updatedBookmark)
+            
+            alert(`成功保存 ${filesArray.length} 个参考图片到选择的文件夹！\n刷新页面即可看到图片。`)
+            
+          } catch (error) {
+            console.log('❌ 用户取消了文件夹选择或发生错误（参考图片）:', error)
+            console.log('🔄 回退到内存模式（参考图片）')
+            // 回退到原来的内存模式
+            fallbackToMemoryMode()
           }
-          setCurrentBookmark(updatedBookmark)
-          onUpdateBookmark(updatedBookmark)
+        } else {
+          console.log('❌ 浏览器不支持 File System Access API，使用内存模式（参考图片）')
+          // 不支持 File System Access API，使用内存模式
+          fallbackToMemoryMode()
         }
-        reader.readAsDataURL(file)
-      })
+      } else {
+        // 服务器模式，使用内存模式
+        fallbackToMemoryMode()
+      }
+      
+      function fallbackToMemoryMode() {
+        console.log('📥 使用内存模式处理参考图片...')
+        filesArray.forEach(file => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const imageUrl = e.target?.result as string
+            const newAdditionalImages = [...additionalImages, imageUrl]
+            setAdditionalImages(newAdditionalImages)
+            
+            // 立即保存到 bookmark 对象
+            const updatedBookmark = {
+              ...currentBookmark,
+              additionalImages: newAdditionalImages
+            }
+            setCurrentBookmark(updatedBookmark)
+            onUpdateBookmark(updatedBookmark)
+          }
+          reader.readAsDataURL(file)
+        })
+      }
     }
   }
 
@@ -223,8 +346,8 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
       // 获取要删除的图片路径
       const imageToDelete = additionalImages[index]
       
-      // 如果是服务器上的文件，调用删除API
-      if (imageToDelete && imageToDelete.startsWith('/uploads/')) {
+      // 如果是服务器上的文件且启用了文件删除功能，调用删除API
+      if (features.fileDelete && imageToDelete && imageToDelete.startsWith('/uploads/')) {
         console.log('🗑️ 准备删除附加图片:', imageToDelete)
         const response = await fetch('/api/delete-files', {
           method: 'POST',
@@ -467,69 +590,199 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
     setUploadProgress(0)
 
     try {
-      // 创建FormData对象
-      const formData = new FormData()
-      files.forEach(file => {
-        formData.append('files', file)
-      })
+      if (features.fileUpload) {
+        // 服务器上传模式
+        const formData = new FormData()
+        files.forEach(file => {
+          formData.append('files', file)
+        })
 
-      console.log('📤 开始上传文件到服务器...')
-      
-      // 上传文件到服务器
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
+        console.log('📤 开始上传文件到服务器...')
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
 
-      if (!response.ok) {
-        throw new Error('上传失败')
+        if (!response.ok) {
+          throw new Error('上传失败')
+        }
+
+        const result = await response.json()
+        console.log('✅ 文件上传成功:', result)
+
+        // 创建新的书签对象
+        const newBookmarks = result.files.map((uploadedFile: any) => ({
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          title: uploadedFile.originalName.replace(/\.[^/.]+$/, ""),
+          url: "",
+          description: `上传的图片: ${uploadedFile.originalName}`,
+          favicon: "/placeholder.svg?height=32&width=32",
+          screenshot: uploadedFile.filePath,
+          category: "已上传",
+          priority: "medium",
+          tags: ["upload", "image"],
+          lastVisited: new Date().toISOString().split('T')[0],
+          visitCount: 0,
+          status: "active",
+          notes: `文件大小: ${(uploadedFile.size / 1024).toFixed(2)} KB`,
+          dateAdded: new Date().toISOString().split('T')[0],
+          isFavorite: false,
+          timeSpent: "0m",
+          weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
+          relatedSites: [],
+          lastUpdate: new Date().toISOString(),
+          siteHealth: "good",
+          loadTime: "1.0s",
+          mobileOptimized: true,
+          fileSize: uploadedFile.size,
+          fileType: uploadedFile.type,
+          fileName: uploadedFile.fileName
+        }))
+
+        onAddBookmarks(newBookmarks)
+        alert(`成功上传 ${result.files.length} 个文件！`)
+      } else {
+        // 静态导出模式 - 尝试使用 File System Access API 或回退到下载
+        console.log('📤 静态模式：尝试直接保存文件...')
+        console.log('🔍 检查 File System Access API 支持:', 'showDirectoryPicker' in window)
+        
+        const newBookmarks: any[] = []
+        
+        // 检查是否支持 File System Access API
+        if ('showDirectoryPicker' in window) {
+          try {
+            console.log('📁 弹出文件夹选择对话框...')
+            // 让用户选择 uploads 文件夹
+            const dirHandle = await (window as any).showDirectoryPicker({
+              mode: 'readwrite',
+              startIn: 'downloads'
+            })
+            console.log('✅ 用户选择了文件夹:', dirHandle.name)
+            
+            for (let i = 0; i < files.length; i++) {
+              const file = files[i]
+              const timestamp = Date.now() + i
+              const fileExtension = file.name.split('.').pop()
+              const newFileName = `image_${timestamp}.${fileExtension}`
+              
+              // 直接保存到选择的文件夹
+              const fileHandle = await dirHandle.getFileHandle(newFileName, { create: true })
+              const writable = await fileHandle.createWritable()
+              await writable.write(file)
+              await writable.close()
+              
+              // 创建书签对象
+              const bookmark = {
+                id: timestamp,
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                url: "",
+                description: `本地图片: ${file.name}`,
+                favicon: "/placeholder.svg?height=32&width=32",
+                screenshot: `./uploads/${newFileName}`,
+                category: "本地上传",
+                priority: "medium",
+                tags: ["upload", "image", "local"],
+                lastVisited: new Date().toISOString().split('T')[0],
+                visitCount: 0,
+                status: "active",
+                notes: `文件大小: ${(file.size / 1024).toFixed(2)} KB\n已保存到 uploads 文件夹`,
+                dateAdded: new Date().toISOString().split('T')[0],
+                isFavorite: false,
+                timeSpent: "0m",
+                weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
+                relatedSites: [],
+                lastUpdate: new Date().toISOString(),
+                siteHealth: "good",
+                loadTime: "1.0s",
+                mobileOptimized: true,
+                fileSize: file.size,
+                fileType: file.type,
+                fileName: newFileName
+              }
+              
+              newBookmarks.push(bookmark)
+              setUploadProgress(((i + 1) / files.length) * 100)
+            }
+            
+            onAddBookmarks(newBookmarks)
+            alert(`成功保存 ${files.length} 个文件到选择的文件夹！\n刷新页面即可看到图片。`)
+            
+          } catch (error) {
+            console.log('❌ 用户取消了文件夹选择或发生错误:', error)
+            console.log('🔄 回退到下载模式')
+            // 回退到下载模式
+            await fallbackDownloadMode()
+          }
+        } else {
+          console.log('❌ 浏览器不支持 File System Access API，使用下载模式')
+          // 不支持 File System Access API，使用下载模式
+          await fallbackDownloadMode()
+        }
+        
+        async function fallbackDownloadMode() {
+          console.log('📥 开始下载模式处理文件...')
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i]
+            const timestamp = Date.now() + i
+            const fileExtension = file.name.split('.').pop()
+            const newFileName = `image_${timestamp}.${fileExtension}`
+            console.log(`📥 下载文件 ${i + 1}/${files.length}: ${newFileName}`)
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(file)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = newFileName
+            a.style.display = 'none'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+            
+            // 创建书签对象
+            const bookmark = {
+              id: timestamp,
+              title: file.name.replace(/\.[^/.]+$/, ""),
+              url: "",
+              description: `本地图片: ${file.name}`,
+              favicon: "/placeholder.svg?height=32&width=32",
+              screenshot: `./uploads/${newFileName}`,
+              category: "本地上传",
+              priority: "medium",
+              tags: ["upload", "image", "local"],
+              lastVisited: new Date().toISOString().split('T')[0],
+              visitCount: 0,
+              status: "active",
+              notes: `文件大小: ${(file.size / 1024).toFixed(2)} KB\n请将下载的文件移动到 uploads 文件夹`,
+              dateAdded: new Date().toISOString().split('T')[0],
+              isFavorite: false,
+              timeSpent: "0m",
+              weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
+              relatedSites: [],
+              lastUpdate: new Date().toISOString(),
+              siteHealth: "good",
+              loadTime: "1.0s",
+              mobileOptimized: true,
+              fileSize: file.size,
+              fileType: file.type,
+              fileName: newFileName
+            }
+            
+            newBookmarks.push(bookmark)
+            setUploadProgress(((i + 1) / files.length) * 100)
+          }
+          
+          onAddBookmarks(newBookmarks)
+          console.log('✅ 下载模式完成，文件已保存到下载文件夹')
+          alert(`成功下载 ${files.length} 个文件！\n\n📁 文件已保存到您的下载文件夹\n📋 请手动将文件移动到以下位置：\n${window.location.href.replace('/index.html', '')}/uploads/\n\n🔄 移动完成后刷新页面即可看到图片`)
+        }
       }
 
-      const result = await response.json()
-      console.log('✅ 文件上传成功:', result)
-
-      // 创建新的书签对象
-      const newBookmarks = result.files.map((uploadedFile: any) => ({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        title: uploadedFile.originalName.replace(/\.[^/.]+$/, ""),
-        url: "",
-        description: `上传的图片: ${uploadedFile.originalName}`,
-        favicon: "/placeholder.svg?height=32&width=32",
-        screenshot: uploadedFile.filePath, // 使用服务器文件路径
-        category: "已上传",
-        priority: "medium",
-        tags: ["upload", "image"],
-        lastVisited: new Date().toISOString().split('T')[0],
-        visitCount: 0,
-        status: "active",
-        notes: `文件大小: ${(uploadedFile.size / 1024).toFixed(2)} KB`,
-        dateAdded: new Date().toISOString().split('T')[0],
-        isFavorite: false,
-        timeSpent: "0m",
-        weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
-        relatedSites: [],
-        lastUpdate: new Date().toISOString(),
-        siteHealth: "good",
-        loadTime: "1.0s",
-        mobileOptimized: true,
-        fileSize: uploadedFile.size,
-        fileType: uploadedFile.type,
-        fileName: uploadedFile.fileName
-      }))
-
-      setUploadProgress(100)
-
-      // 批量添加所有书签
-      onAddBookmarks(newBookmarks)
-
-      // 显示成功消息
-      alert(`成功上传 ${result.files.length} 个文件！`)
-
     } catch (error) {
-      console.error('❌ 上传失败:', error)
-      alert('上传失败，请重试')
+      console.error('❌ 处理失败:', error)
+      alert('处理失败，请重试')
     } finally {
-      // 上传完成
       setIsUploading(false)
       setFiles([])
       onClose()
@@ -546,7 +799,10 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
         <DialogHeader>
           <DialogTitle>批量上传图片</DialogTitle>
           <DialogDescription>
-            选择多个图片文件进行批量上传
+            {features.fileUpload
+              ? "选择多个图片文件进行批量上传到服务器"
+              : "选择多个图片文件进行本地处理（静态导出模式）"
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -623,12 +879,12 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
                   {isUploading ? (
                     <>
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
-                      上传中...
+                      {features.fileUpload ? "上传中..." : "处理中..."}
                     </>
                   ) : (
                     <>
                       <Upload className="h-4 w-4 mr-2" />
-                      开始上传
+                      {features.fileUpload ? "开始上传" : "开始处理"}
                     </>
                   )}
                 </Button>
@@ -1185,38 +1441,164 @@ export default function HomePage() {
   const [bookmarkToDelete, setBookmarkToDelete] = useState<number | null>(null)
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
 
-  // 从localStorage加载图片数据
+  // 从JSON文件和localStorage加载图片数据
   useEffect(() => {
-    console.log('🔄 加载localStorage数据...')
-    const savedBookmarks = localStorage.getItem('bookmarks')
-    if (savedBookmarks) {
+    const loadBookmarks = async () => {
+      console.log('🔄 开始加载书签数据...')
+      
       try {
-        const parsed = JSON.parse(savedBookmarks)
-        console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
-        setBookmarks(parsed)
+        // 首先尝试从JSON文件加载数据（跨浏览器共享）
+        console.log('📄 尝试从JSON文件加载数据...')
+        const response = await fetch('./data/bookmarks.json')
+        if (response.ok) {
+          const jsonData = await response.json()
+          console.log('✅ 成功从JSON文件加载数据，书签数量:', jsonData.length)
+          
+          // 检查localStorage是否有更新的数据
+          const savedBookmarks = localStorage.getItem('bookmarks')
+          if (savedBookmarks) {
+            try {
+              const localData = JSON.parse(savedBookmarks)
+              const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
+              const jsonTimestamp = localStorage.getItem('json_timestamp') || '0'
+              
+              // 如果localStorage数据更新，使用localStorage数据
+              if (localData.length > jsonData.length || localTimestamp > jsonTimestamp) {
+                console.log('📱 使用localStorage数据（更新）')
+                setBookmarks(localData)
+              } else {
+                console.log('📄 使用JSON文件数据（最新）')
+                setBookmarks(jsonData)
+                // 同步到localStorage
+                localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+                localStorage.setItem('json_timestamp', Date.now().toString())
+              }
+            } catch (error) {
+              console.error('❌ 解析localStorage数据失败:', error)
+              setBookmarks(jsonData)
+            }
+          } else {
+            console.log('📄 首次加载，使用JSON文件数据')
+            setBookmarks(jsonData)
+            localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+            localStorage.setItem('json_timestamp', Date.now().toString())
+          }
+        } else {
+          throw new Error('无法加载JSON文件')
+        }
       } catch (error) {
-        console.error('❌ 解析localStorage数据失败:', error)
-        setBookmarks(mockBookmarks)
+        console.log('⚠️ 无法从JSON文件加载，尝试localStorage...')
+        
+        // 回退到localStorage
+        const savedBookmarks = localStorage.getItem('bookmarks')
+        if (savedBookmarks) {
+          try {
+            const parsed = JSON.parse(savedBookmarks)
+            console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
+            setBookmarks(parsed)
+          } catch (error) {
+            console.error('❌ 解析localStorage数据失败:', error)
+            setBookmarks(mockBookmarks)
+          }
+        } else {
+          console.log('⚠️ 没有任何保存的数据，使用默认数据')
+          setBookmarks(mockBookmarks)
+        }
       }
-    } else {
-      console.log('⚠️ localStorage中没有保存的数据，使用默认数据')
-      setBookmarks(mockBookmarks)
     }
+    
+    loadBookmarks()
   }, [])
 
-  // 保存书签数据到localStorage（不包含大型图片数据）
+  // 保存书签数据到localStorage并尝试同步到JSON文件
   useEffect(() => {
-    console.log('💾 保存书签数据到localStorage，数量:', bookmarks.length)
+    console.log('💾 保存书签数据，数量:', bookmarks.length)
     if (bookmarks.length > 0) {
       try {
+        // 保存到localStorage
         localStorage.setItem('bookmarks', JSON.stringify(bookmarks))
+        localStorage.setItem('bookmarks_timestamp', Date.now().toString())
         console.log('✅ 书签数据已保存到localStorage')
+        
+        // 尝试使用File System Access API保存到JSON文件（跨浏览器同步）
+        if ('showDirectoryPicker' in window && features.fileUpload === false) {
+          // 静态模式下，提供导出功能
+          console.log('📄 静态模式：数据已更新，可使用导出功能同步')
+        }
       } catch (error) {
-        console.error('❌ 保存到localStorage失败:', error)
+        console.error('❌ 保存数据失败:', error)
         alert('保存失败，请重试')
       }
     }
   }, [bookmarks])
+
+  // 导出数据到JSON文件的函数
+  const exportBookmarksData = async () => {
+    try {
+      console.log('📤 开始导出书签数据...')
+      
+      if ('showDirectoryPicker' in window) {
+        // 使用File System Access API
+        const dirHandle = await (window as any).showDirectoryPicker({
+          mode: 'readwrite'
+        })
+        
+        const fileHandle = await dirHandle.getFileHandle('bookmarks.json', { create: true })
+        const writable = await fileHandle.createWritable()
+        await writable.write(JSON.stringify(bookmarks, null, 2))
+        await writable.close()
+        
+        console.log('✅ 书签数据已导出到JSON文件')
+        alert('数据已导出到 bookmarks.json 文件！\n其他浏览器可以通过导入此文件来同步数据。')
+      } else {
+        // 回退到下载模式
+        const dataStr = JSON.stringify(bookmarks, null, 2)
+        const dataBlob = new Blob([dataStr], { type: 'application/json' })
+        const url = URL.createObjectURL(dataBlob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'bookmarks.json'
+        link.click()
+        URL.revokeObjectURL(url)
+        
+        console.log('✅ 书签数据已下载为JSON文件')
+        alert('数据已下载为 bookmarks.json 文件！\n请将此文件放在 data/ 文件夹中，其他浏览器即可同步数据。')
+      }
+    } catch (error) {
+      console.error('❌ 导出数据失败:', error)
+      alert('导出失败，请重试')
+    }
+  }
+
+  // 导入数据从JSON文件的函数
+  const importBookmarksData = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const importedData = JSON.parse(e.target?.result as string)
+            if (Array.isArray(importedData)) {
+              setBookmarks(importedData)
+              console.log('✅ 成功导入书签数据，数量:', importedData.length)
+              alert(`成功导入 ${importedData.length} 个书签！`)
+            } else {
+              throw new Error('无效的数据格式')
+            }
+          } catch (error) {
+            console.error('❌ 导入数据失败:', error)
+            alert('导入失败，请检查文件格式')
+          }
+        }
+        reader.readAsText(file)
+      }
+    }
+    input.click()
+  }
 
   const filteredBookmarks = useMemo(() => {
     return bookmarks
@@ -1280,39 +1662,41 @@ export default function HomePage() {
       // 获取要删除的书签
       const bookmarksToDelete = bookmarks.filter(bookmark => selectedBookmarks.includes(bookmark.id))
       
-      // 收集需要删除的文件路径
-      const filePaths: string[] = []
-      bookmarksToDelete.forEach(bookmark => {
-        // 主截图
-        if (bookmark.screenshot && bookmark.screenshot.startsWith('/uploads/')) {
-          filePaths.push(bookmark.screenshot)
-        }
-        // 附加图片
-        if (bookmark.additionalImages && Array.isArray(bookmark.additionalImages)) {
-          bookmark.additionalImages.forEach((imagePath: string) => {
-            if (imagePath.startsWith('/uploads/')) {
-              filePaths.push(imagePath)
-            }
-          })
-        }
-      })
-
-      // 如果有文件需要删除，调用删除API
-      if (filePaths.length > 0) {
-        console.log('🗑️ 准备删除文件:', filePaths)
-        const response = await fetch('/api/delete-files', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filePaths }),
+      // 如果启用了文件删除功能，收集需要删除的文件路径
+      if (features.fileDelete) {
+        const filePaths: string[] = []
+        bookmarksToDelete.forEach(bookmark => {
+          // 主截图
+          if (bookmark.screenshot && bookmark.screenshot.startsWith('/uploads/')) {
+            filePaths.push(bookmark.screenshot)
+          }
+          // 附加图片
+          if (bookmark.additionalImages && Array.isArray(bookmark.additionalImages)) {
+            bookmark.additionalImages.forEach((imagePath: string) => {
+              if (imagePath.startsWith('/uploads/')) {
+                filePaths.push(imagePath)
+              }
+            })
+          }
         })
 
-        const result = await response.json()
-        if (result.success) {
-          console.log('✅ 文件删除成功:', result.message)
-        } else {
-          console.error('❌ 文件删除失败:', result.error)
+        // 如果有文件需要删除，调用删除API
+        if (filePaths.length > 0) {
+          console.log('🗑️ 准备删除文件:', filePaths)
+          const response = await fetch('/api/delete-files', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filePaths }),
+          })
+
+          const result = await response.json()
+          if (result.success) {
+            console.log('✅ 文件删除成功:', result.message)
+          } else {
+            console.error('❌ 文件删除失败:', result.error)
+          }
         }
       }
 
@@ -1346,7 +1730,7 @@ export default function HomePage() {
         // 获取要删除的书签
         const bookmarkToDeleteObj = bookmarks.find(bookmark => bookmark.id === bookmarkToDelete)
         
-        if (bookmarkToDeleteObj) {
+        if (bookmarkToDeleteObj && features.fileDelete) {
           // 收集需要删除的文件路径
           const filePaths: string[] = []
           
@@ -1556,6 +1940,18 @@ export default function HomePage() {
             <Upload className="h-4 w-4 mr-2" />
             批量上传
           </Button>
+          {!features.fileUpload && (
+            <>
+              <Button variant="secondary" onClick={exportBookmarksData} title="导出数据到JSON文件，实现跨浏览器同步">
+                <Download className="h-4 w-4 mr-2" />
+                导出数据
+              </Button>
+              <Button variant="secondary" onClick={importBookmarksData} title="从JSON文件导入数据，实现跨浏览器同步">
+                <FolderOpen className="h-4 w-4 mr-2" />
+                导入数据
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
