@@ -313,8 +313,12 @@ export function EnhancedBulkUploadDialog({ isOpen, onClose, onAddBookmarks }: En
             const fileData = filesToSave[i]
             const file = fileData.originalFile
             
-            // 创建本地 URL 用于预览
-            const localUrl = URL.createObjectURL(file)
+            // 将图片转换为 base64 格式以实现跨浏览器兼容性
+            const base64Url = await new Promise<string>((resolve) => {
+              const reader = new FileReader()
+              reader.onload = (e) => resolve(e.target?.result as string)
+              reader.readAsDataURL(file)
+            })
             
             const bookmark = {
               id: fileData.timestamp,
@@ -322,14 +326,14 @@ export function EnhancedBulkUploadDialog({ isOpen, onClose, onAddBookmarks }: En
               url: "",
               description: `本地图片: ${file.name}`,
               favicon: "/placeholder.svg?height=32&width=32",
-              screenshot: localUrl, // 使用 blob URL 进行预览
+              screenshot: base64Url, // 使用 base64 格式进行跨浏览器兼容
               category: "本地上传",
               priority: "medium",
               tags: ["upload", "image", "local"],
               lastVisited: new Date().toISOString().split('T')[0],
               visitCount: 0,
               status: "active",
-              notes: `文件大小: ${(file.size / 1024).toFixed(2)} KB\n已保存到本地`,
+              notes: `文件大小: ${(file.size / 1024).toFixed(2)} KB\n已保存为 base64 格式，支持跨浏览器访问`,
               dateAdded: new Date().toISOString().split('T')[0],
               isFavorite: false,
               timeSpent: "0m",
@@ -342,7 +346,7 @@ export function EnhancedBulkUploadDialog({ isOpen, onClose, onAddBookmarks }: En
               fileSize: file.size,
               fileType: file.type,
               fileName: fileData.name,
-              localUrl: localUrl // 保存本地 URL
+              base64Data: base64Url // 保存 base64 数据
             }
             
             newBookmarks.push(bookmark)
@@ -350,10 +354,10 @@ export function EnhancedBulkUploadDialog({ isOpen, onClose, onAddBookmarks }: En
           
           onAddBookmarks(newBookmarks)
           
-          const saveMethod = browserSupport.fileSystemAccess ? 'File System Access API' : 
+          const saveMethod = browserSupport.fileSystemAccess ? 'File System Access API' :
                            browserSupport.webShare ? 'Web Share API' : '传统下载'
           
-          alert(`✅ 成功保存 ${files.length} 个文件！\n保存方式: ${saveMethod}\n\n图片已添加到应用中，可以正常查看和管理。`)
+          alert(`✅ 成功保存 ${files.length} 个文件！\n保存方式: ${saveMethod}\n\n图片已转换为 base64 格式并添加到应用中，支持跨浏览器访问和查看。`)
           
         } else {
           throw new Error('所有保存方式都失败了')
