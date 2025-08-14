@@ -3,15 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
-# 设置 GITHUB_TOKEN 权限以允许部署到 GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 只允许一个并发部署，跳过正在运行和最新排队之间的运行
-# 但是，不要取消正在进行的运行，因为我们希望让这些生产部署完成
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -38,7 +36,6 @@ jobs:
         GITHUB_ACTIONS: true
       run: |
         npm run export
-        # 添加 .nojekyll 文件以防止 Jekyll 处理
         touch out/.nojekyll
       
     - name: Setup Pages
