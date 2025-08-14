@@ -1285,7 +1285,8 @@ export default function HomePage() {
     
     if (response.ok) {
       const configData = await response.json()
-      const githubData = configData.bookmarks || configData // 兼容旧格式
+      // 处理数据格式兼容性：支持简单数组和对象格式
+      const githubData = Array.isArray(configData) ? configData : (configData.bookmarks || [])
       console.log('✅ 成功从GitHub配置文件加载数据，书签数量:', githubData.length)
       
       // 检查localStorage是否有更新的数据
@@ -1294,7 +1295,10 @@ export default function HomePage() {
         try {
           const localData = JSON.parse(savedBookmarks)
           const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
-          const githubTimestamp = new Date(configData.lastUpdated || 0).getTime().toString()
+          // 对于数组格式的配置文件，使用当前时间作为时间戳
+          const githubTimestamp = Array.isArray(configData) 
+            ? Date.now().toString() 
+            : new Date(configData.lastUpdated || 0).getTime().toString()
           
           // 如果localStorage数据更新，使用localStorage数据
           if (localData.length > githubData.length || localTimestamp > githubTimestamp) {
@@ -1315,7 +1319,11 @@ export default function HomePage() {
         console.log('🌐 首次加载，使用GitHub配置文件数据')
         setBookmarks(githubData)
         localStorage.setItem('bookmarks', JSON.stringify(githubData))
-        localStorage.setItem('github_timestamp', new Date(configData.lastUpdated || 0).getTime().toString())
+        // 对于数组格式的配置文件，使用当前时间作为时间戳
+        const timestamp = Array.isArray(configData) 
+          ? Date.now().toString() 
+          : new Date(configData.lastUpdated || 0).getTime().toString()
+        localStorage.setItem('github_timestamp', timestamp)
       }
     } else {
       throw new Error('无法从GitHub加载配置文件')
