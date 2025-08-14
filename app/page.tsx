@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import { features } from "@/lib/config"
-import { EnhancedBulkUploadDialog } from "@/components/enhanced-bulk-upload"
+import { SimpleBulkUploadDialog } from "@/components/simple-bulk-upload"
 import {
   Search,
   Grid3X3,
@@ -1570,8 +1570,8 @@ export default function HomePage() {
         onAddBookmark={handleAddBookmark}
       />
 
-      {/* Enhanced Bulk Upload Dialog */}
-      <EnhancedBulkUploadDialog
+      {/* Simple Bulk Upload Dialog */}
+      <SimpleBulkUploadDialog
         isOpen={isBulkUploadOpen}
         onClose={() => setIsBulkUploadOpen(false)}
         onAddBookmarks={handleBulkAddBookmarks}
