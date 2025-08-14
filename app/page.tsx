@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import { features } from "@/lib/config"
-import { SimpleBulkUploadDialog } from "@/components/simple-bulk-upload"
+import SimpleBulkUploadDialog from "@/components/simple-bulk-upload"
 import {
   Search,
   Grid3X3,
