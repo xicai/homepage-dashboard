@@ -420,15 +420,6 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
                   minHeight: '200px'
                 }}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                <button
-                  onClick={triggerFileInput}
-                  className="bg-white text-black px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-100 transition-colors"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Upload Image</span>
-                </button>
-              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1187,7 +1178,7 @@ export default function HomePage() {
     loadBookmarks()
   }, [])
 
-  // 保存书签数据到localStorage
+  // 保存书签数据到localStorage和JSON文件
   useEffect(() => {
     console.log('💾 保存书签数据，数量:', bookmarks.length)
     if (bookmarks.length > 0) {
@@ -1196,12 +1187,38 @@ export default function HomePage() {
         localStorage.setItem('bookmarks', JSON.stringify(bookmarks))
         localStorage.setItem('bookmarks_timestamp', Date.now().toString())
         console.log('✅ 书签数据已保存到localStorage')
+        
+        // 保存到JSON文件（异步，不阻塞UI）
+        saveToJsonFile(bookmarks)
       } catch (error) {
         console.error('❌ 保存数据失败:', error)
         alert('保存失败，请重试')
       }
     }
   }, [bookmarks])
+
+  // 保存数据到JSON文件的函数
+  const saveToJsonFile = async (bookmarksData: any[]) => {
+    try {
+      console.log('📄 开始保存到JSON文件...')
+      const response = await fetch('/api/save-bookmarks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookmarksData),
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        console.log('✅ 成功保存到JSON文件:', result.message)
+      } else {
+        console.error('❌ 保存到JSON文件失败:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ 保存到JSON文件时发生错误:', error)
+    }
+  }
 
   const filteredBookmarks = useMemo(() => {
     return bookmarks
@@ -1535,10 +1552,6 @@ export default function HomePage() {
           )}
         </div>
         <div className="flex space-x-2">
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            添加图片
-          </Button>
           <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             批量上传
@@ -1555,11 +1568,7 @@ export default function HomePage() {
             <Search className="h-12 w-12 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-medium mb-2">No images found</h3>
-          <p className="text-muted-foreground mb-4">Try adjusting your search criteria or add a new image.</p>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Your First Image
-          </Button>
+          <p className="text-muted-foreground mb-4">Try adjusting your search criteria.</p>
         </div>
       )}
 
