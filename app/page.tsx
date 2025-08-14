@@ -218,17 +218,46 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
     }
   }
 
-  const handleRemoveAdditionalImage = (index: number) => {
-    const newAdditionalImages = additionalImages.filter((_, i) => i !== index)
-    setAdditionalImages(newAdditionalImages)
-    
-    // 立即保存到 bookmark 对象
-    const updatedBookmark = {
-      ...currentBookmark,
-      additionalImages: newAdditionalImages
+  const handleRemoveAdditionalImage = async (index: number) => {
+    try {
+      // 获取要删除的图片路径
+      const imageToDelete = additionalImages[index]
+      
+      // 如果是服务器上的文件，调用删除API
+      if (imageToDelete && imageToDelete.startsWith('/uploads/')) {
+        console.log('🗑️ 准备删除附加图片:', imageToDelete)
+        const response = await fetch('/api/delete-files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filePaths: [imageToDelete] }),
+        })
+
+        const result = await response.json()
+        if (result.success) {
+          console.log('✅ 附加图片删除成功:', result.message)
+        } else {
+          console.error('❌ 附加图片删除失败:', result.error)
+        }
+      }
+
+      // 从前端状态中移除图片
+      const newAdditionalImages = additionalImages.filter((_, i) => i !== index)
+      setAdditionalImages(newAdditionalImages)
+      
+      // 立即保存到 bookmark 对象
+      const updatedBookmark = {
+        ...currentBookmark,
+        additionalImages: newAdditionalImages
+      }
+      setCurrentBookmark(updatedBookmark)
+      onUpdateBookmark(updatedBookmark)
+      
+    } catch (error) {
+      console.error('❌ 删除附加图片失败:', error)
+      alert('删除图片失败，请重试')
     }
-    setCurrentBookmark(updatedBookmark)
-    onUpdateBookmark(updatedBookmark)
   }
 
   return (
@@ -437,39 +466,43 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
     setIsUploading(true)
     setUploadProgress(0)
 
-    // 处理文件上传
-    const totalFiles = files.length
-    let uploadedCount = 0
-    const newBookmarks = []
-
-    for (const file of files) {
-      // 将文件转换为base64格式以便持久保存
-      const base64Image = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          resolve(e.target?.result as string)
-        }
-        reader.readAsDataURL(file)
+    try {
+      // 创建FormData对象
+      const formData = new FormData()
+      files.forEach(file => {
+        formData.append('files', file)
       })
 
-      // 模拟上传延迟
-      await new Promise(resolve => setTimeout(resolve, 300))
+      console.log('📤 开始上传文件到服务器...')
       
+      // 上传文件到服务器
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('上传失败')
+      }
+
+      const result = await response.json()
+      console.log('✅ 文件上传成功:', result)
+
       // 创建新的书签对象
-      const newBookmark = {
+      const newBookmarks = result.files.map((uploadedFile: any) => ({
         id: Date.now() + Math.floor(Math.random() * 1000),
-        title: file.name.replace(/\.[^/.]+$/, ""),
+        title: uploadedFile.originalName.replace(/\.[^/.]+$/, ""),
         url: "",
-        description: `Uploaded image: ${file.name}`,
+        description: `上传的图片: ${uploadedFile.originalName}`,
         favicon: "/placeholder.svg?height=32&width=32",
-        screenshot: base64Image, // 使用base64格式保存图片
-        category: "Uploaded",
+        screenshot: uploadedFile.filePath, // 使用服务器文件路径
+        category: "已上传",
         priority: "medium",
         tags: ["upload", "image"],
         lastVisited: new Date().toISOString().split('T')[0],
         visitCount: 0,
         status: "active",
-        notes: `File size: ${(file.size / 1024).toFixed(2)} KB`,
+        notes: `文件大小: ${(uploadedFile.size / 1024).toFixed(2)} KB`,
         dateAdded: new Date().toISOString().split('T')[0],
         isFavorite: false,
         timeSpent: "0m",
@@ -479,22 +512,28 @@ function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
         siteHealth: "good",
         loadTime: "1.0s",
         mobileOptimized: true,
-        fileSize: file.size,
-        fileType: file.type
-      }
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type,
+        fileName: uploadedFile.fileName
+      }))
 
-      newBookmarks.push(newBookmark)
-      uploadedCount++
-      setUploadProgress((uploadedCount / totalFiles) * 100)
+      setUploadProgress(100)
+
+      // 批量添加所有书签
+      onAddBookmarks(newBookmarks)
+
+      // 显示成功消息
+      alert(`成功上传 ${result.files.length} 个文件！`)
+
+    } catch (error) {
+      console.error('❌ 上传失败:', error)
+      alert('上传失败，请重试')
+    } finally {
+      // 上传完成
+      setIsUploading(false)
+      setFiles([])
+      onClose()
     }
-
-    // 批量添加所有书签
-    onAddBookmarks(newBookmarks)
-
-    // 上传完成
-    setIsUploading(false)
-    setFiles([])
-    onClose()
   }
 
   const triggerFileInput = () => {
@@ -1148,38 +1187,33 @@ export default function HomePage() {
 
   // 从localStorage加载图片数据
   useEffect(() => {
+    console.log('🔄 加载localStorage数据...')
     const savedBookmarks = localStorage.getItem('bookmarks')
     if (savedBookmarks) {
       try {
-        setBookmarks(JSON.parse(savedBookmarks))
+        const parsed = JSON.parse(savedBookmarks)
+        console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
+        setBookmarks(parsed)
       } catch (error) {
-        console.error('Failed to parse saved bookmarks:', error)
+        console.error('❌ 解析localStorage数据失败:', error)
         setBookmarks(mockBookmarks)
       }
     } else {
+      console.log('⚠️ localStorage中没有保存的数据，使用默认数据')
       setBookmarks(mockBookmarks)
     }
   }, [])
 
-  // 保存图片数据到localStorage
+  // 保存书签数据到localStorage（不包含大型图片数据）
   useEffect(() => {
+    console.log('💾 保存书签数据到localStorage，数量:', bookmarks.length)
     if (bookmarks.length > 0) {
       try {
-        const bookmarksData = JSON.stringify(bookmarks)
-        // 检查数据大小（大约5MB限制）
-        if (bookmarksData.length > 5 * 1024 * 1024) {
-          console.warn('数据过大，可能超出localStorage限制')
-          alert('存储空间不足，请删除一些图片或清理浏览器缓存')
-          return
-        }
-        localStorage.setItem('bookmarks', bookmarksData)
+        localStorage.setItem('bookmarks', JSON.stringify(bookmarks))
+        console.log('✅ 书签数据已保存到localStorage')
       } catch (error) {
-        console.error('保存到localStorage失败:', error)
-        if (error instanceof DOMException && error.code === 22) {
-          alert('存储空间已满，请删除一些图片或清理浏览器缓存')
-        } else {
-          alert('保存失败，请重试')
-        }
+        console.error('❌ 保存到localStorage失败:', error)
+        alert('保存失败，请重试')
       }
     }
   }, [bookmarks])
@@ -1222,13 +1256,18 @@ export default function HomePage() {
     }
   }
 
+  // 全选/取消全选功能
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookmarks(filteredBookmarks.map((b) => b.id))
+      setSelectedBookmarks(filteredBookmarks.map(bookmark => bookmark.id))
     } else {
       setSelectedBookmarks([])
     }
   }
+
+  // 检查是否全选状态
+  const isAllSelected = filteredBookmarks.length > 0 && selectedBookmarks.length === filteredBookmarks.length
+  const isPartialSelected = selectedBookmarks.length > 0 && selectedBookmarks.length < filteredBookmarks.length
 
   const handleBulkDelete = () => {
     if (selectedBookmarks.length > 0) {
@@ -1236,10 +1275,60 @@ export default function HomePage() {
     }
   }
 
-  const confirmBulkDelete = () => {
-    setBookmarks(prev => prev.filter(bookmark => !selectedBookmarks.includes(bookmark.id)))
-    setSelectedBookmarks([])
-    setBulkDeleteConfirmOpen(false)
+  const confirmBulkDelete = async () => {
+    try {
+      // 获取要删除的书签
+      const bookmarksToDelete = bookmarks.filter(bookmark => selectedBookmarks.includes(bookmark.id))
+      
+      // 收集需要删除的文件路径
+      const filePaths: string[] = []
+      bookmarksToDelete.forEach(bookmark => {
+        // 主截图
+        if (bookmark.screenshot && bookmark.screenshot.startsWith('/uploads/')) {
+          filePaths.push(bookmark.screenshot)
+        }
+        // 附加图片
+        if (bookmark.additionalImages && Array.isArray(bookmark.additionalImages)) {
+          bookmark.additionalImages.forEach((imagePath: string) => {
+            if (imagePath.startsWith('/uploads/')) {
+              filePaths.push(imagePath)
+            }
+          })
+        }
+      })
+
+      // 如果有文件需要删除，调用删除API
+      if (filePaths.length > 0) {
+        console.log('🗑️ 准备删除文件:', filePaths)
+        const response = await fetch('/api/delete-files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filePaths }),
+        })
+
+        const result = await response.json()
+        if (result.success) {
+          console.log('✅ 文件删除成功:', result.message)
+        } else {
+          console.error('❌ 文件删除失败:', result.error)
+        }
+      }
+
+      // 从前端状态中移除书签
+      setBookmarks(prev => prev.filter(bookmark => !selectedBookmarks.includes(bookmark.id)))
+      setSelectedBookmarks([])
+      setBulkDeleteConfirmOpen(false)
+      
+      // 更新localStorage
+      const updatedBookmarks = bookmarks.filter(bookmark => !selectedBookmarks.includes(bookmark.id))
+      localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
+      
+    } catch (error) {
+      console.error('❌ 批量删除失败:', error)
+      alert('删除失败，请重试')
+    }
   }
 
   const handleEdit = (bookmark: any) => {
@@ -1251,10 +1340,62 @@ export default function HomePage() {
     setDeleteConfirmOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (bookmarkToDelete) {
-      setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkToDelete))
-      setBookmarkToDelete(null)
+      try {
+        // 获取要删除的书签
+        const bookmarkToDeleteObj = bookmarks.find(bookmark => bookmark.id === bookmarkToDelete)
+        
+        if (bookmarkToDeleteObj) {
+          // 收集需要删除的文件路径
+          const filePaths: string[] = []
+          
+          // 主截图
+          if (bookmarkToDeleteObj.screenshot && bookmarkToDeleteObj.screenshot.startsWith('/uploads/')) {
+            filePaths.push(bookmarkToDeleteObj.screenshot)
+          }
+          
+          // 附加图片
+          if (bookmarkToDeleteObj.additionalImages && Array.isArray(bookmarkToDeleteObj.additionalImages)) {
+            bookmarkToDeleteObj.additionalImages.forEach((imagePath: string) => {
+              if (imagePath.startsWith('/uploads/')) {
+                filePaths.push(imagePath)
+              }
+            })
+          }
+
+          // 如果有文件需要删除，调用删除API
+          if (filePaths.length > 0) {
+            console.log('🗑️ 准备删除文件:', filePaths)
+            const response = await fetch('/api/delete-files', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ filePaths }),
+            })
+
+            const result = await response.json()
+            if (result.success) {
+              console.log('✅ 文件删除成功:', result.message)
+            } else {
+              console.error('❌ 文件删除失败:', result.error)
+            }
+          }
+        }
+
+        // 从前端状态中移除书签
+        setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkToDelete))
+        
+        // 更新localStorage
+        const updatedBookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkToDelete)
+        localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
+        
+        setBookmarkToDelete(null)
+      } catch (error) {
+        console.error('❌ 删除失败:', error)
+        alert('删除失败，请重试')
+      }
     }
     setDeleteConfirmOpen(false)
   }
@@ -1264,7 +1405,12 @@ export default function HomePage() {
   }
 
   const handleBulkAddBookmarks = (newBookmarks: any[]) => {
-    setBookmarks(prev => [...prev, ...newBookmarks])
+    console.log('📤 批量添加书签，新增数量:', newBookmarks.length)
+    setBookmarks(prev => {
+      const updated = [...prev, ...newBookmarks]
+      console.log('📊 更新后总书签数量:', updated.length)
+      return updated
+    })
   }
 
   const handleViewDetails = (bookmark: any) => {
@@ -1367,6 +1513,24 @@ export default function HomePage() {
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold">我的图片</h1>
+          {filteredBookmarks.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  ref={(input) => {
+                    if (input) input.indeterminate = isPartialSelected
+                  }}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {isAllSelected ? '取消全选' : '全选'}
+                </span>
+              </label>
+            </div>
+          )}
           {selectedBookmarks.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">

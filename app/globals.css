@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 隐藏可能的第三方组件或浏览器扩展 */
+/* 隐藏左下角的圆形组件 */
+[class*="notification"],
+[class*="toast"],
+[class*="alert"],
+[id*="notification"],
+[id*="toast"],
+[id*="alert"],
+div[style*="position: fixed"][style*="bottom"],
+div[style*="position: absolute"][style*="bottom"],
+/* 隐藏可能包含 N 标识的组件 */
+div[class*="circle"]:has(span:contains("N")),
+div[style*="border-radius"][style*="position: fixed"]:has(span),
+/* 通用的左下角固定定位组件 */
+div[style*="position: fixed"][style*="left"][style*="bottom"],
+div[style*="position: absolute"][style*="left"][style*="bottom"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 隐藏可能的浏览器扩展组件 */
+[data-extension],
+[class*="extension"],
+[id*="extension"] {
+  display: none !important;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
