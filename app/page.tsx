@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react"
 import { features } from "@/lib/config"
 import { EnhancedBulkUploadDialog } from "@/components/enhanced-bulk-upload"
-import GitHubUploadDialog from "@/components/github-upload-dialog"
 import {
   Search,
   Grid3X3,
@@ -1658,8 +1657,6 @@ export default function HomePage() {
         onAddBookmarks={handleBulkAddBookmarks}
       />
 
-      {/* GitHub Upload Dialog */}
-      <GitHubUploadDialog images={filteredBookmarks} />
 
       {/* Detailed Image Modal */}
       <DetailedBookmarkModal

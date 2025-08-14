@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select"
 import { Upload, Github, Settings, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { githubUploader, GitHubUploadResult } from '@/lib/github-uploader'
+import { toast } from "@/hooks/use-toast"
 
 interface GitHubConfig {
   token: string
@@ -81,12 +82,19 @@ export default function GitHubUploadDialog({ images }: GitHubUploadDialogProps) 
   // 保存配置到 localStorage
   const saveConfig = () => {
     try {
-      // 不保存 token 到 localStorage（安全考虑）
-      const configToSave = { ...config }
-      delete (configToSave as any).token
-      localStorage.setItem('github-upload-config', JSON.stringify(configToSave))
+      // 保存完整配置包括 token
+      localStorage.setItem('github-upload-config', JSON.stringify(config))
+      toast({
+        title: "配置已保存",
+        description: "GitHub 配置已成功保存到本地",
+      })
     } catch (error) {
       console.error('Failed to save GitHub config:', error)
+      toast({
+        title: "保存失败",
+        description: "无法保存配置到本地存储",
+        variant: "destructive"
+      })
     }
   }
 
@@ -394,7 +402,10 @@ export default function GitHubUploadDialog({ images }: GitHubUploadDialogProps) 
                   multiple
                   accept="image/*"
                   className="hidden"
-                  onChange={() => {}}
+                  onChange={(e) => {
+                    // 强制重新渲染以显示上传按钮
+                    setValidationError('')
+                  }}
                 />
                 <Button
                   onClick={() => fileInputRef.current?.click()}
