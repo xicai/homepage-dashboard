@@ -1,12 +1,15 @@
 // 静态导出配置检测
-// 通过检测当前协议来判断是否为静态导出模式
+// 通过检测当前环境来判断是否为静态导出模式
 const isStaticBuild = typeof window !== 'undefined' ?
-  // 客户端：检查协议是否为 file:// 或者没有 API 路由
+  // 客户端：检查是否为静态部署环境
   window.location.protocol === 'file:' ||
   window.location.hostname === '' ||
+  window.location.hostname.includes('github.io') ||
+  window.location.hostname.includes('netlify.app') ||
+  window.location.hostname.includes('vercel.app') ||
   !window.location.origin.startsWith('http') :
   // 服务端：检查构建配置
-  process.env.NODE_ENV === 'production'
+  process.env.NODE_ENV === 'production' || process.env.GITHUB_ACTIONS === 'true'
 
 // 动态检测是否为静态导出模式
 export const isStaticExport = isStaticBuild
