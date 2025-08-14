@@ -1109,6 +1109,8 @@ export default function HomePage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [bookmarkToDelete, setBookmarkToDelete] = useState<number | null>(null)
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
+  const [configImported, setConfigImported] = useState(false) // 新增状态跟踪配置导入
+  const [isLoadingData, setIsLoadingData] = useState(false) // 数据加载状态
 
   // 检查URL hash中的配置并处理
   useEffect(() => {
@@ -1145,7 +1147,11 @@ export default function HomePage() {
             const newUrl = window.location.pathname
             window.history.replaceState({}, document.title, newUrl)
             
-            alert('配置已成功导入！现在可以使用GitHub上传功能。')
+            // 触发数据重新加载
+            setConfigImported(true)
+            setIsLoadingData(true) // 开始加载状态
+            
+            // 不显示alert，改为状态指示器
           } else {
             console.error('❌ URL配置参数无效')
             alert('URL中的配置参数无效，请检查配置字符串。')
@@ -1167,8 +1173,30 @@ export default function HomePage() {
       try {
         // 首先尝试从GitHub配置文件加载数据（跨浏览器共享）
         await loadFromGitHub()
+        
+        // 如果是通过URL配置导入触发的加载，显示成功消息
+        if (configImported) {
+          console.log('✅ 配置导入完成，GitHub数据加载成功')
+          setIsLoadingData(false) // 停止加载状态
+          // 延迟显示成功消息，让用户看到数据加载完成
+          setTimeout(() => {
+            alert('✅ 配置已成功导入并加载了GitHub上的图片数据！')
+          }, 500)
+          setConfigImported(false) // 重置状态
+        }
+        
       } catch (error) {
         console.log('⚠️ 无法从GitHub加载，尝试本地配置文件...')
+        
+        // 如果是配置导入触发的，但GitHub加载失败，显示警告
+        if (configImported) {
+          console.error('❌ GitHub数据加载失败:', error)
+          setIsLoadingData(false) // 停止加载状态
+          setTimeout(() => {
+            alert('⚠️ 配置已成功导入！但加载GitHub数据时出现问题，请检查网络连接或GitHub仓库设置。')
+          }, 500)
+          setConfigImported(false) // 重置状态
+        }
         
         try {
           // 尝试从本地配置文件加载
@@ -1233,7 +1261,7 @@ export default function HomePage() {
     }
     
     loadBookmarks()
-  }, [])
+  }, [configImported]) // 添加 configImported 作为依赖
 
   // 从GitHub加载配置的函数
   const loadFromGitHub = async () => {
@@ -1690,6 +1718,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen w-full p-6">
+      {/* 加载状态指示器 */}
+      {isLoadingData && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <span>正在从GitHub加载图片数据...</span>
+          </div>
+        </div>
+      )}
+
       {/* Add Bookmark Button */}
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center space-x-4">
