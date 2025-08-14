@@ -34,8 +34,6 @@ import {
   Check,
   X,
   FileImage,
-  FolderOpen,
-  Github,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -1293,74 +1291,6 @@ export default function HomePage() {
     }
   }
 
-  // 导出数据到JSON文件的函数
-  const exportBookmarksData = async () => {
-    try {
-      console.log('📤 开始导出书签数据...')
-      
-      if ('showDirectoryPicker' in window) {
-        // 使用File System Access API
-        const dirHandle = await (window as any).showDirectoryPicker({
-          mode: 'readwrite'
-        })
-        
-        const fileHandle = await dirHandle.getFileHandle('bookmarks.json', { create: true })
-        const writable = await fileHandle.createWritable()
-        await writable.write(JSON.stringify(bookmarks, null, 2))
-        await writable.close()
-        
-        console.log('✅ 书签数据已导出到JSON文件')
-        alert('数据已导出到 bookmarks.json 文件！\n其他浏览器可以通过导入此文件来同步数据。')
-      } else {
-        // 回退到下载模式
-        const dataStr = JSON.stringify(bookmarks, null, 2)
-        const dataBlob = new Blob([dataStr], { type: 'application/json' })
-        const url = URL.createObjectURL(dataBlob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = 'bookmarks.json'
-        link.click()
-        URL.revokeObjectURL(url)
-        
-        console.log('✅ 书签数据已下载为JSON文件')
-        alert('数据已下载为 bookmarks.json 文件！\n请将此文件放在 data/ 文件夹中，其他浏览器即可同步数据。')
-      }
-    } catch (error) {
-      console.error('❌ 导出数据失败:', error)
-      alert('导出失败，请重试')
-    }
-  }
-
-  // 导入数据从JSON文件的函数
-  const importBookmarksData = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.json'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          try {
-            const importedData = JSON.parse(e.target?.result as string)
-            if (Array.isArray(importedData)) {
-              setBookmarks(importedData)
-              console.log('✅ 成功导入书签数据，数量:', importedData.length)
-              alert(`成功导入 ${importedData.length} 个书签！`)
-            } else {
-              throw new Error('无效的数据格式')
-            }
-          } catch (error) {
-            console.error('❌ 导入数据失败:', error)
-            alert('导入失败，请检查文件格式')
-          }
-        }
-        reader.readAsText(file)
-      }
-    }
-    input.click()
-  }
-
   const filteredBookmarks = useMemo(() => {
     return bookmarks
       .filter((bookmark) => {
@@ -1709,18 +1639,6 @@ export default function HomePage() {
               setBookmarks(data)
             }}
           />
-          {!features.fileUpload && (
-            <>
-              <Button variant="secondary" onClick={exportBookmarksData} title="导出数据到JSON文件，实现跨浏览器同步">
-                <Download className="h-4 w-4 mr-2" />
-                导出数据
-              </Button>
-              <Button variant="secondary" onClick={importBookmarksData} title="从JSON文件导入数据，实现跨浏览器同步">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                导入数据
-              </Button>
-            </>
-          )}
         </div>
       </div>
 

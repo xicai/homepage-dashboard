@@ -34,7 +34,7 @@ import {
   XCircle, 
   AlertCircle,
   Info,
-  Sync
+  RotateCcw
 } from 'lucide-react'
 import { githubDataSyncer, GitHubSyncConfig } from '@/lib/github-uploader'
 
@@ -449,7 +449,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
                     variant="secondary"
                     className="gap-2"
                   >
-                    <Sync className="h-4 w-4" />
+                    <RotateCcw className="h-4 w-4" />
                     双向同步
                   </Button>
                 </div>
