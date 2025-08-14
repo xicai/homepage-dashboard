@@ -29,6 +29,8 @@ import {
   Camera,
   Check,
   X,
+  FileImage,
+  FolderOpen,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -587,6 +589,186 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
   )
 }
 
+function BulkUploadDialog({ isOpen, onClose, onAddBookmarks }: any) {
+  const [files, setFiles] = useState<File[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files
+    if (selectedFiles) {
+      const newFiles = Array.from(selectedFiles)
+      setFiles(prevFiles => [...prevFiles, ...newFiles])
+    }
+  }
+
+  const handleRemoveFile = (index: number) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index))
+  }
+
+  const handleUpload = async () => {
+    if (files.length === 0) return
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    // 模拟上传过程
+    const totalFiles = files.length
+    let uploadedCount = 0
+    const newBookmarks = []
+
+    for (const file of files) {
+      // 模拟上传延迟
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // 创建新的书签对象
+      const newBookmark = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        url: "",
+        description: `Uploaded image: ${file.name}`,
+        favicon: "/placeholder.svg?height=32&width=32",
+        screenshot: URL.createObjectURL(file),
+        category: "Uploaded",
+        priority: "medium",
+        tags: ["upload", "image"],
+        lastVisited: new Date().toISOString().split('T')[0],
+        visitCount: 0,
+        status: "active",
+        notes: `File size: ${(file.size / 1024).toFixed(2)} KB`,
+        dateAdded: new Date().toISOString().split('T')[0],
+        isFavorite: false,
+        timeSpent: "0m",
+        weeklyVisits: [0, 0, 0, 0, 0, 0, 0],
+        relatedSites: [],
+        lastUpdate: new Date().toISOString(),
+        siteHealth: "good",
+        loadTime: "1.0s",
+        mobileOptimized: true,
+        fileSize: file.size,
+        fileType: file.type
+      }
+
+      newBookmarks.push(newBookmark)
+      uploadedCount++
+      setUploadProgress((uploadedCount / totalFiles) * 100)
+    }
+
+    // 批量添加所有书签
+    onAddBookmarks(newBookmarks)
+
+    // 上传完成
+    setIsUploading(false)
+    setFiles([])
+    onClose()
+  }
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click()
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>批量上传图片</DialogTitle>
+          <DialogDescription>
+            选择多个图片文件进行批量上传
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+            onClick={triggerFileInput}
+          >
+            <FolderOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <p className="text-lg font-medium mb-2">拖拽文件到这里</p>
+            <p className="text-sm text-gray-500 mb-4">或点击选择文件</p>
+            <Button variant="secondary">
+              <FileImage className="h-4 w-4 mr-2" />
+              选择文件
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">支持 JPG, PNG, GIF 格式</p>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+          />
+
+          {files.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium">已选择 {files.length} 个文件</h3>
+                <Button variant="outline" size="sm" onClick={triggerFileInput}>
+                  添加更多
+                </Button>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto border rounded-lg p-2">
+                {files.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                    <div className="flex items-center space-x-2">
+                      <FileImage className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="text-sm font-medium">{file.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {(file.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {isUploading && (
+                <div className="space-y-2">
+                  <Progress value={uploadProgress} className="w-full" />
+                  <p className="text-sm text-center">
+                    正在上传... {Math.round(uploadProgress)}%
+                  </p>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={onClose}>
+                  取消
+                </Button>
+                <Button onClick={handleUpload} disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                      上传中...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      开始上传
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function AddBookmarkDialog({ isOpen, onClose, onAddBookmark }: any) {
   const [formData, setFormData] = useState({
     title: '',
@@ -1123,6 +1305,7 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState("grid")
   const [selectedBookmarks, setSelectedBookmarks] = useState<number[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false)
   const [selectedBookmark, setSelectedBookmark] = useState<any>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [bookmarks, setBookmarks] = useState<any[]>([])
@@ -1247,6 +1430,10 @@ export default function HomePage() {
     setBookmarks(prev => [...prev, newBookmark])
   }
 
+  const handleBulkAddBookmarks = (newBookmarks: any[]) => {
+    setBookmarks(prev => [...prev, ...newBookmarks])
+  }
+
   const handleViewDetails = (bookmark: any) => {
     setSelectedBookmark(bookmark)
     setIsDetailModalOpen(true)
@@ -1363,10 +1550,16 @@ export default function HomePage() {
             </div>
           )}
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          添加图片
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            添加图片
+          </Button>
+          <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            批量上传
+          </Button>
+        </div>
       </div>
 
       {/* Bookmarks Display */}
@@ -1391,6 +1584,13 @@ export default function HomePage() {
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
         onAddBookmark={handleAddBookmark}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onAddBookmarks={handleBulkAddBookmarks}
       />
 
       {/* Detailed Image Modal */}
