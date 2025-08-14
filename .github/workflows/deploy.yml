@@ -34,7 +34,12 @@ jobs:
       run: npm ci
       
     - name: Build and export
-      run: npm run export
+      env:
+        GITHUB_ACTIONS: true
+      run: |
+        npm run export
+        # 添加 .nojekyll 文件以防止 Jekyll 处理
+        touch out/.nojekyll
       
     - name: Setup Pages
       uses: actions/configure-pages@v4

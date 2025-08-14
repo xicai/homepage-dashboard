@@ -7,8 +7,9 @@ const nextConfig = {
     unoptimized: true,
   },
   // GitHub Pages 部署配置
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/homepage-dashboard' : '',
-  basePath: process.env.NODE_ENV === 'production' ? '/homepage-dashboard' : '',
+  // 使用环境变量来控制是否启用 basePath
+  assetPrefix: process.env.GITHUB_ACTIONS ? '/homepage-dashboard' : '',
+  basePath: process.env.GITHUB_ACTIONS ? '/homepage-dashboard' : '',
   // 静态导出优化配置
   experimental: {
     // 启用静态导出优化
