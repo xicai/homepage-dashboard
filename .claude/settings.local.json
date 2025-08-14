@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 30s npm run build)",
+      "Bash(ls:*)",
+      "Bash(npm run export:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 300 npm run export)",
+      "Bash(rm:*)",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}
