@@ -52,11 +52,11 @@ const outDir = path.join(__dirname, '../out');
 if (fs.existsSync(outDir)) {
   fixPaths(outDir);
   
-  // 删除out目录中的bookmarks.json文件
-  const bookmarksPath = path.join(outDir, 'data', 'bookmarks.json');
-  if (fs.existsSync(bookmarksPath)) {
-    fs.unlinkSync(bookmarksPath);
-    console.log('✅ Removed bookmarks.json from build output');
+  // 删除out目录中的images.json文件
+  const imagesPath = path.join(outDir, 'data', 'images.json');
+  if (fs.existsSync(imagesPath)) {
+    fs.unlinkSync(imagesPath);
+    console.log('✅ Removed images.json from build output');
   }
   
   console.log('✅ All paths fixed successfully!');

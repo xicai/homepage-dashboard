@@ -39,11 +39,11 @@ import {
 import { githubDataSyncer, GitHubSyncConfig } from '@/lib/github-uploader'
 
 interface GitHubSyncDialogProps {
-  bookmarks: any[]
+  images: any[]
   onSyncComplete: (data: any[]) => void
 }
 
-export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSyncDialogProps) {
+export default function GitHubSyncDialog({ images, onSyncComplete }: GitHubSyncDialogProps) {
   const [open, setOpen] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
   const [config, setConfig] = useState<GitHubSyncConfig>({
@@ -51,7 +51,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
     owner: '',
     repo: '',
     branch: 'master',
-    dataFile: 'public/data/bookmarks.json',
+    dataFile: 'public/data/images.json',
     autoSync: false
   })
   const [isSyncing, setIsSyncing] = useState(false)
@@ -129,11 +129,11 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
     setStatusMessage('正在上传数据到GitHub...')
 
     try {
-      const result = await githubDataSyncer.syncToGitHub(bookmarks)
+      const result = await githubDataSyncer.syncToGitHub(images)
       
       if (result.success) {
         setSyncStatus('success')
-        setStatusMessage(`成功同步 ${bookmarks.length} 个书签到GitHub`)
+        setStatusMessage(`成功同步 ${images.length} 个图片到GitHub`)
         updateSyncInfo()
       } else {
         setSyncStatus('error')
@@ -162,7 +162,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
         if (result.hasUpdates && result.data) {
           onSyncComplete(result.data)
           setSyncStatus('success')
-          setStatusMessage(`成功从GitHub同步 ${result.data.length} 个书签`)
+          setStatusMessage(`成功从GitHub同步 ${result.data.length} 个图片`)
           updateSyncInfo()
         } else {
           setSyncStatus('success')
@@ -206,7 +206,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
       setSyncStatus('uploading')
       setStatusMessage('第2步: 上传数据到GitHub...')
       
-      const pushResult = await githubDataSyncer.syncToGitHub(bookmarks)
+      const pushResult = await githubDataSyncer.syncToGitHub(images)
       
       if (pushResult.success) {
         setSyncStatus('success')
@@ -245,7 +245,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
       owner: '',
       repo: '',
       branch: 'master',
-      dataFile: 'public/data/bookmarks.json',
+      dataFile: 'public/data/images.json',
       autoSync: false
     })
     updateSyncInfo()
@@ -273,7 +273,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
             GitHub 数据同步
           </DialogTitle>
           <DialogDescription>
-            将书签数据同步到GitHub仓库，实现跨设备数据一致性
+            将图片数据同步到GitHub仓库，实现跨设备数据一致性
           </DialogDescription>
         </DialogHeader>
 
@@ -294,11 +294,11 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
                 </div>
                 <div className="flex justify-between">
                   <span>最后同步数量:</span>
-                  <span>{syncInfo.lastSyncCount} 个书签</span>
+                  <span>{syncInfo.lastSyncCount} 个图片</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>当前书签数量:</span>
-                  <span>{bookmarks.length} 个书签</span>
+                  <span>当前图片数量:</span>
+                  <span>{images.length} 个图片</span>
                 </div>
               </div>
             </div>
@@ -381,7 +381,7 @@ export default function GitHubSyncDialog({ bookmarks, onSyncComplete }: GitHubSy
                   <Label htmlFor="sync-datafile">数据文件路径</Label>
                   <Input
                     id="sync-datafile"
-                    placeholder="public/data/bookmarks.json"
+                    placeholder="public/data/images.json"
                     value={config.dataFile}
                     onChange={(e) => setConfig(prev => ({ ...prev, dataFile: e.target.value }))}
                   />

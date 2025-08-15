@@ -1,0 +1,44 @@
+
+> my-v0-project@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+ ⚠ Port 3001 is in use, trying 3002 instead.
+   ▲ Next.js 15.2.4
+   - Local:        http://localhost:3002
+   - Network:      http://10.255.255.254:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 16.1s
+ ○ Compiling /api/upload-r2 ...
+ ✓ Compiled /api/upload-r2 in 1958ms (361 modules)
+🚀 R2上传API开始处理请求...
+✅ R2配置检查通过
+📁 接收到 1 个文件
+✅ R2客户端创建成功
+📤 开始上传文件: test_file.txt, 大小: 13 bytes
+🔑 生成的key: uploads/1755245582188.txt
+💾 文件转换为Buffer完成, 大小: 13 bytes
+☁️ 发送上传命令到R2...
+上传参数: {
+  Bucket: 'blog',
+  Key: 'uploads/1755245582188.txt',
+  ContentType: 'text/plain',
+  ContentLength: 13
+}
+❌ 文件上传失败: test_file.txt InvalidArgument: Credential access key has length 15, should be 32
+    at async POST (app/api/upload-r2/route.ts:88:8)
+  86 |         })
+  87 |
+> 88 |         await r2Client.send(putCommand)
+     |        ^
+  89 |
+  90 |         console.log(`✅ 文件上传到R2成功: ${key}`)
+  91 | {
+  '$fault': 'client',
+  '$metadata': [Object],
+  Code: 'InvalidArgument'
+}
+📊 上传结果统计: 成功 0, 失败 1
+ POST /api/upload-r2/ 200 in 6246ms

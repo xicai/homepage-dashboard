@@ -18,7 +18,14 @@
       "Bash(git commit:*)",
       "Bash(cp:*)",
       "Bash(jq:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(mv:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(./test_r2.sh:*)",
+      "Bash(pkill:*)",
+      "Bash(true)"
     ],
     "deny": []
   }
