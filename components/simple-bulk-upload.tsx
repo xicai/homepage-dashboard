@@ -24,10 +24,10 @@ import ConfigGenerator from "@/components/config-generator"
 interface SimpleBulkUploadDialogProps {
   isOpen: boolean
   onClose: () => void
-  onAddBookmarks: (bookmarks: any[]) => void
+  onAddImages: (images: any[]) => void
 }
 
-export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks }: SimpleBulkUploadDialogProps) {
+export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddImages }: SimpleBulkUploadDialogProps) {
   const [files, setFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -134,7 +134,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
     setIsUploading(true)
     setUploadProgress(0)
 
-    const newBookmarks: any[] = []
+    const newImages: any[] = []
 
     try {
       for (let i = 0; i < files.length; i++) {
@@ -172,7 +172,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
           const aspectRatio = img.width / img.height
           const fileName = file.name.replace(/\.[^/.]+$/, "")
 
-          newBookmarks.push({
+          newImages.push({
             id: Date.now() + i,
             title: fileName,
             url: githubUrl,
@@ -211,10 +211,10 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
       }
 
       // 添加所有新书签
-      if (newBookmarks.length > 0) {
-        onAddBookmarks(newBookmarks)
+      if (newImages.length > 0) {
+        onAddImages(newImages)
         setUploadSuccess(true)
-        setUploadedCount(newBookmarks.length)
+        setUploadedCount(newImages.length)
         
         // 3秒后关闭弹窗
         setTimeout(() => {
@@ -238,7 +238,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
     setIsUploading(true)
     setUploadProgress(0)
 
-    const newBookmarks: any[] = []
+    const newImages: any[] = []
 
     try {
       // 创建FormData
@@ -272,7 +272,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
             const aspectRatio = img.width / img.height
             const fileName = file.name.replace(/\.[^/.]+$/, "")
 
-            newBookmarks.push({
+            newImages.push({
               id: Date.now() + i,
               title: fileName,
               url: uploadResult.url,
@@ -312,10 +312,10 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
         }
 
         // 添加所有新书签
-        if (newBookmarks.length > 0) {
-          onAddBookmarks(newBookmarks)
+        if (newImages.length > 0) {
+          onAddImages(newImages)
           setUploadSuccess(true)
-          setUploadedCount(newBookmarks.length)
+          setUploadedCount(newImages.length)
           
           // 3秒后关闭弹窗
           setTimeout(() => {
@@ -342,7 +342,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
     setIsUploading(true)
     setUploadProgress(0)
 
-    const newBookmarks: any[] = []
+    const newImages: any[] = []
 
     try {
       // 创建FormData
@@ -374,7 +374,7 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
           const aspectRatio = img.width / img.height
           const fileName = file.name.replace(/\.[^/.]+$/, "")
 
-          newBookmarks.push({
+          newImages.push({
             id: Date.now() + i,
             title: fileName,
             url: uploadedFile.url,
@@ -410,10 +410,10 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
         }
 
         // 添加所有新书签
-        if (newBookmarks.length > 0) {
-          onAddBookmarks(newBookmarks)
+        if (newImages.length > 0) {
+          onAddImages(newImages)
           setUploadSuccess(true)
-          setUploadedCount(newBookmarks.length)
+          setUploadedCount(newImages.length)
           
           // 3秒后关闭弹窗
           setTimeout(() => {
@@ -555,7 +555,6 @@ export default function SimpleBulkUploadDialog({ isOpen, onClose, onAddBookmarks
               {showConfig && (
                 <ConfigGenerator 
                   onConfigGenerated={handleConfigSubmit}
-                  onClose={() => setShowConfig(false)}
                 />
               )}
             </div>

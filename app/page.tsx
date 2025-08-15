@@ -89,8 +89,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-// Mock data for bookmarks with enhanced details
-const mockBookmarks: any[] = [
+// Mock data for images with enhanced details
+const mockImages: any[] = [
   {
     id: 1,
     title: "示例图片 1",
@@ -155,28 +155,28 @@ const viewModes = [
   { id: "timeline", label: "Timeline", icon: CalendarIcon },
 ]
 
-function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: any) {
-  if (!bookmark) return null
-
-  const [currentBookmark, setCurrentBookmark] = useState(bookmark)
+function DetailedImageModal({ image, isOpen, onClose, onUpdateImage }: any) {
+  if (!image) return null
+  
+  const [currentImage, setCurrentImage] = useState(image)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const multipleFileInputRef = useRef<HTMLInputElement>(null)
-  const [additionalImages, setAdditionalImages] = useState<string[]>(bookmark?.additionalImages || [])
+  const [additionalImages, setAdditionalImages] = useState<string[]>(image?.additionalImages || [])
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [isEditingNotes, setIsEditingNotes] = useState(false)
-  const [editDescription, setEditDescription] = useState(bookmark?.description || '')
-  const [editNotes, setEditNotes] = useState(bookmark?.notes || '')
+  const [editDescription, setEditDescription] = useState(image?.description || '')
+  const [editNotes, setEditNotes] = useState(image?.notes || '')
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
-  // 当 bookmark 变化时更新 additionalImages
+  // 当 image 变化时更新 additionalImages
   useEffect(() => {
-    if (bookmark) {
-      setCurrentBookmark(bookmark)
-      setAdditionalImages(bookmark.additionalImages || [])
-      setEditDescription(bookmark.description || '')
-      setEditNotes(bookmark.notes || '')
+    if (image) {
+      setCurrentImage(image)
+      setAdditionalImages(image.additionalImages || [])
+      setEditDescription(image.description || '')
+      setEditNotes(image.notes || '')
     }
-  }, [bookmark])
+  }, [image])
 
   const healthColors = {
     excellent: "text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-200",
@@ -233,16 +233,16 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
         const img = document.createElement('img')
         img.onload = () => {
           const aspectRatio = img.width / img.height
-          const updatedBookmark = {
-            ...currentBookmark,
+          const updatedImage = {
+            ...currentImage,
             screenshot: compressedImageUrl,
             title: fileName,
             imageWidth: img.width,
             imageHeight: img.height,
             aspectRatio: aspectRatio
           }
-          setCurrentBookmark(updatedBookmark)
-          onUpdateBookmark(updatedBookmark)
+          setCurrentImage(updatedImage)
+          onUpdateImage(updatedImage)
         }
         img.src = URL.createObjectURL(file)
       } catch (error) {
@@ -301,13 +301,13 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
             const updatedAdditionalImages = [...additionalImages, ...newImageUrls]
             setAdditionalImages(updatedAdditionalImages)
             
-            // 立即保存到 bookmark 对象
-            const updatedBookmark = {
-              ...currentBookmark,
+            // 立即保存到 image 对象
+            const updatedImage = {
+              ...currentImage,
               additionalImages: updatedAdditionalImages
             }
-            setCurrentBookmark(updatedBookmark)
-            onUpdateBookmark(updatedBookmark)
+            setCurrentImage(updatedImage)
+            onUpdateImage(updatedImage)
             
             alert(`成功保存 ${filesArray.length} 个参考图片到选择的文件夹！\n刷新页面即可看到图片。`)
             
@@ -336,13 +336,13 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
             const newAdditionalImages = [...additionalImages, imageUrl]
             setAdditionalImages(newAdditionalImages)
             
-            // 立即保存到 bookmark 对象
-            const updatedBookmark = {
-              ...currentBookmark,
+            // 立即保存到 image 对象
+            const updatedImage = {
+              ...currentImage,
               additionalImages: newAdditionalImages
             }
-            setCurrentBookmark(updatedBookmark)
-            onUpdateBookmark(updatedBookmark)
+            setCurrentImage(updatedImage)
+            onUpdateImage(updatedImage)
           }
           reader.readAsDataURL(file)
         })
@@ -378,13 +378,13 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
       const newAdditionalImages = additionalImages.filter((_, i) => i !== index)
       setAdditionalImages(newAdditionalImages)
       
-      // 立即保存到 bookmark 对象
-      const updatedBookmark = {
-        ...currentBookmark,
+      // 立即保存到 image 对象
+      const updatedImage = {
+        ...currentImage,
         additionalImages: newAdditionalImages
       }
-      setCurrentBookmark(updatedBookmark)
-      onUpdateBookmark(updatedBookmark)
+      setCurrentImage(updatedImage)
+      onUpdateImage(updatedImage)
       
     } catch (error) {
       console.error('❌ 删除附加图片失败:', error)
@@ -398,11 +398,11 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
         <DialogHeader>
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={bookmark.favicon || "/placeholder.svg"} alt={bookmark.title} />
-              <AvatarFallback>{bookmark.title[0]}</AvatarFallback>
+              <AvatarImage src={image.favicon || "/placeholder.svg"} alt={image.title} />
+              <AvatarFallback>{image.title[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <DialogTitle className="text-2xl">{bookmark.title}</DialogTitle>
+              <DialogTitle className="text-2xl">{image.title}</DialogTitle>
             </div>
           </div>
         </DialogHeader>
@@ -411,13 +411,13 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="relative group">
               <Image
-                src={convertGitHubBlobToRaw(currentBookmark.screenshot || "/placeholder.svg")}
-                alt={`${currentBookmark.title} screenshot`}
+                src={convertGitHubBlobToRaw(currentImage.screenshot || "/placeholder.svg")}
+                alt={`${currentImage.title} screenshot`}
                 width={500}
                 height={400}
                 className="w-full max-h-80 object-contain rounded-lg border bg-muted"
                 style={{
-                  aspectRatio: currentBookmark.aspectRatio || 'auto',
+                  aspectRatio: currentImage.aspectRatio || 'auto',
                   minHeight: '200px'
                 }}
               />
@@ -438,11 +438,11 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
                     size="sm"
                     onClick={() => {
                       if (isEditingDescription) {
-                        const updatedBookmark = { ...currentBookmark, description: editDescription }
-                        setCurrentBookmark(updatedBookmark)
-                        onUpdateBookmark(updatedBookmark)
+                        const updatedImage = { ...currentImage, description: editDescription }
+                        setCurrentImage(updatedImage)
+                        onUpdateImage(updatedImage)
                       } else {
-                        setEditDescription(currentBookmark.description || '')
+                        setEditDescription(currentImage.description || '')
                       }
                       setIsEditingDescription(!isEditingDescription)
                     }}
@@ -458,7 +458,7 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
                     className="text-muted-foreground"
                   />
                 ) : (
-                  <p className="text-muted-foreground">{currentBookmark.description}</p>
+                  <p className="text-muted-foreground">{currentImage.description}</p>
                 )}
               </div>
               <div>
@@ -469,11 +469,11 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
                     size="sm"
                     onClick={() => {
                       if (isEditingNotes) {
-                        const updatedBookmark = { ...currentBookmark, notes: editNotes }
-                        setCurrentBookmark(updatedBookmark)
-                        onUpdateBookmark(updatedBookmark)
+                        const updatedImage = { ...currentImage, notes: editNotes }
+                        setCurrentImage(updatedImage)
+                        onUpdateImage(updatedImage)
                       } else {
-                        setEditNotes(currentBookmark.notes || '')
+                        setEditNotes(currentImage.notes || '')
                       }
                       setIsEditingNotes(!isEditingNotes)
                     }}
@@ -490,7 +490,7 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
                     rows={3}
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">{currentBookmark.notes}</p>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">{currentImage.notes}</p>
                 )}
               </div>
             </div>
@@ -566,7 +566,7 @@ function DetailedBookmarkModal({ bookmark, isOpen, onClose, onUpdateBookmark }: 
 }
 
 
-function AddBookmarkDialog({ isOpen, onClose, onAddBookmark }: any) {
+function AddImageDialog({ isOpen, onClose, onAddImage }: any) {
   const [formData, setFormData] = useState({
     title: '',
     url: '',
@@ -582,7 +582,7 @@ function AddBookmarkDialog({ isOpen, onClose, onAddBookmark }: any) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const newBookmark = {
+    const newImage = {
       id: Date.now(),
       title: formData.title,
       url: formData.url,
@@ -607,7 +607,7 @@ function AddBookmarkDialog({ isOpen, onClose, onAddBookmark }: any) {
       mobileOptimized: true,
     }
 
-    onAddBookmark(newBookmark)
+    onAddImage(newImage)
     
     // Reset form
     setFormData({
@@ -752,7 +752,7 @@ function AddBookmarkDialog({ isOpen, onClose, onAddBookmark }: any) {
   )
 }
 
-function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDelete, onViewDetails }: any) {
+function ImageCard({ image, viewMode, isSelected, onSelect, onEdit, onDelete, onViewDetails }: any) {
   const priorityColors = {
     high: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
@@ -766,42 +766,42 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
           <div className="flex items-center space-x-4">
             <Checkbox checked={isSelected} onCheckedChange={onSelect} />
             <Avatar className="h-8 w-8">
-              <AvatarImage src={bookmark.favicon || "/placeholder.svg"} alt={bookmark.title} />
-              <AvatarFallback>{bookmark.title[0]}</AvatarFallback>
+              <AvatarImage src={image.favicon || "/placeholder.svg"} alt={image.title} />
+              <AvatarFallback>{image.title[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h3
                   className="font-medium truncate cursor-pointer hover:text-primary"
-                  onClick={() => onViewDetails(bookmark)}
+                  onClick={() => onViewDetails(image)}
                 >
-                  {bookmark.title}
+                  {image.title}
                 </h3>
-                {bookmark.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
-                <Badge variant="secondary" className={priorityColors[bookmark.priority as keyof typeof priorityColors]}>
-                  {bookmark.priority}
+                {image.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
+                <Badge variant="secondary" className={priorityColors[image.priority as keyof typeof priorityColors]}>
+                  {image.priority}
                 </Badge>
-                <Badge variant="outline">{bookmark.category}</Badge>
+                <Badge variant="outline">{image.category}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground truncate">{bookmark.description}</p>
+              <p className="text-sm text-muted-foreground truncate">{image.description}</p>
             </div>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span>{bookmark.lastVisited}</span>
+              <span>{image.lastVisited}</span>
               <span>•</span>
-              <span>{bookmark.visitCount} visits</span>
+              <span>{image.visitCount} visits</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="sm" onClick={() => onViewDetails(bookmark)}>
+              <Button variant="ghost" size="sm" onClick={() => onViewDetails(image)}>
                 <Eye className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => window.open(bookmark.url, "_blank")}>
+              <Button variant="ghost" size="sm" onClick={() => window.open(image.url, "_blank")}>
                 <ExternalLink className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => onEdit(bookmark)}>
+              <Button variant="ghost" size="sm" onClick={() => onEdit(image)}>
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => onDelete(bookmark.id)}>
+              <Button variant="ghost" size="sm" onClick={() => onDelete(image.id)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -818,29 +818,29 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
           <div className="flex items-center space-x-3">
             <Checkbox checked={isSelected} onCheckedChange={onSelect} />
             <Avatar className="h-6 w-6">
-              <AvatarImage src={bookmark.favicon || "/placeholder.svg"} alt={bookmark.title} />
-              <AvatarFallback className="text-xs">{bookmark.title[0]}</AvatarFallback>
+              <AvatarImage src={image.favicon || "/placeholder.svg"} alt={image.title} />
+              <AvatarFallback className="text-xs">{image.title[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <h3
                 className="font-medium text-sm truncate cursor-pointer hover:text-primary"
-                onClick={() => onViewDetails(bookmark)}
+                onClick={() => onViewDetails(image)}
               >
-                {bookmark.title}
+                {image.title}
               </h3>
               <div className="flex items-center space-x-1 mt-1">
-                {bookmark.isFavorite && <Heart className="h-3 w-3 fill-red-500 text-red-500" />}
+                {image.isFavorite && <Heart className="h-3 w-3 fill-red-500 text-red-500" />}
                 <Badge variant="outline" className="text-xs px-1 py-0">
-                  {bookmark.category}
+                  {image.category}
                 </Badge>
-                <span className="text-xs text-muted-foreground">{bookmark.visitCount} visits</span>
+                <span className="text-xs text-muted-foreground">{image.visitCount} visits</span>
               </div>
             </div>
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="sm" onClick={() => onViewDetails(bookmark)}>
+              <Button variant="ghost" size="sm" onClick={() => onViewDetails(image)}>
                 <Eye className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => window.open(bookmark.url, "_blank")}>
+              <Button variant="ghost" size="sm" onClick={() => window.open(image.url, "_blank")}>
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </div>
@@ -858,22 +858,22 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
             <div className="flex items-center space-x-2">
               <Checkbox checked={isSelected} onCheckedChange={onSelect} />
               <Avatar className="h-6 w-6">
-                <AvatarImage src={bookmark.favicon || "/placeholder.svg"} alt={bookmark.title} />
-                <AvatarFallback className="text-xs">{bookmark.title[0]}</AvatarFallback>
+                <AvatarImage src={image.favicon || "/placeholder.svg"} alt={image.title} />
+                <AvatarFallback className="text-xs">{image.title[0]}</AvatarFallback>
               </Avatar>
             </div>
-            {bookmark.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
+            {image.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
           </div>
-          <h3 className="font-medium mb-2 cursor-pointer hover:text-primary" onClick={() => onViewDetails(bookmark)}>
-            {bookmark.title}
+          <h3 className="font-medium mb-2 cursor-pointer hover:text-primary" onClick={() => onViewDetails(image)}>
+            {image.title}
           </h3>
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{bookmark.description}</p>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{image.description}</p>
           <div className="flex items-center justify-end">
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="sm" onClick={() => onViewDetails(bookmark)}>
+              <Button variant="ghost" size="sm" onClick={() => onViewDetails(image)}>
                 <Eye className="h-3 w-3" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => window.open(bookmark.url, "_blank")}>
+              <Button variant="ghost" size="sm" onClick={() => window.open(image.url, "_blank")}>
                 <ExternalLink className="h-3 w-3" />
               </Button>
             </div>
@@ -896,30 +896,30 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
               <div className="flex items-center space-x-2">
                 <Checkbox checked={isSelected} onCheckedChange={onSelect} />
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={bookmark.favicon || "/placeholder.svg"} alt={bookmark.title} />
-                  <AvatarFallback>{bookmark.title[0]}</AvatarFallback>
+                  <AvatarImage src={image.favicon || "/placeholder.svg"} alt={image.title} />
+                  <AvatarFallback>{image.title[0]}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-medium cursor-pointer hover:text-primary" onClick={() => onViewDetails(bookmark)}>
-                    {bookmark.title}
+                  <h3 className="font-medium cursor-pointer hover:text-primary" onClick={() => onViewDetails(image)}>
+                    {image.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground">{bookmark.lastVisited}</p>
+                  <p className="text-xs text-muted-foreground">{image.lastVisited}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
-                {bookmark.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
-                <Badge variant="outline" className={priorityColors[bookmark.priority as keyof typeof priorityColors]}>
-                  {bookmark.priority}
+                {image.isFavorite && <Heart className="h-4 w-4 fill-red-500 text-red-500" />}
+                <Badge variant="outline" className={priorityColors[image.priority as keyof typeof priorityColors]}>
+                  {image.priority}
                 </Badge>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">{bookmark.description}</p>
+            <p className="text-sm text-muted-foreground mb-2">{image.description}</p>
             <div className="flex items-center justify-end">
               <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="sm" onClick={() => onViewDetails(bookmark)}>
+                <Button variant="ghost" size="sm" onClick={() => onViewDetails(image)}>
                   <Eye className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => window.open(bookmark.url, "_blank")}>
+                <Button variant="ghost" size="sm" onClick={() => window.open(image.url, "_blank")}>
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
@@ -931,7 +931,7 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
   }
 
   // Default grid view with dynamic height based on aspect ratio
-  const aspectRatio = bookmark.aspectRatio || 1
+  const aspectRatio = image.aspectRatio || 1
   const cardWidth = 240
   const maxImageHeight = 320
   const minImageHeight = 120
@@ -944,22 +944,22 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
     <div className="group relative break-inside-avoid mb-4">
       {/* 图片容器 */}
       <div className="relative overflow-hidden rounded-lg bg-muted">
-        {bookmark.screenshot && bookmark.screenshot !== "/placeholder.svg" ? (
+        {image.screenshot && image.screenshot !== "/placeholder.svg" ? (
           <Image
-            src={convertGitHubBlobToRaw(bookmark.screenshot)}
-            alt={`${bookmark.title} screenshot`}
+            src={convertGitHubBlobToRaw(image.screenshot)}
+            alt={`${image.title} screenshot`}
             width={cardWidth}
             height={0}
             className="w-full h-auto object-contain cursor-pointer transition-transform duration-200 group-hover:scale-105"
             style={{
-              aspectRatio: bookmark.aspectRatio || 'auto'
+              aspectRatio: image.aspectRatio || 'auto'
             }}
-            onClick={() => onViewDetails(bookmark)}
+            onClick={() => onViewDetails(image)}
           />
         ) : (
           <div
             className="w-full bg-gray-100 flex items-center justify-center cursor-pointer aspect-square"
-            onClick={() => onViewDetails(bookmark)}
+            onClick={() => onViewDetails(image)}
           >
             <span className="text-gray-400 text-sm">无图片</span>
           </div>
@@ -973,7 +973,7 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
             className="h-7 w-7 p-0 rounded-full shadow-lg"
             onClick={(e) => {
               e.stopPropagation()
-              onDelete(bookmark.id)
+              onDelete(image.id)
             }}
           >
             <Trash2 className="h-3 w-3" />
@@ -995,16 +995,16 @@ function BookmarkCard({ bookmark, viewMode, isSelected, onSelect, onEdit, onDele
       <div className="mt-2 px-1">
         <h3
           className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 cursor-pointer hover:text-primary transition-colors"
-          onClick={() => onViewDetails(bookmark)}
+          onClick={() => onViewDetails(image)}
         >
-          {bookmark.title}
+          {image.title}
         </h3>
       </div>
     </div>
   )
 }
 
-function AppSidebar({ bookmarks }: { bookmarks: any[] }) {
+function AppSidebar({ images }: { images: any[] }) {
   return (
     <Sidebar>
       <SidebarHeader>
@@ -1040,7 +1040,7 @@ function AppSidebar({ bookmarks }: { bookmarks: any[] }) {
                   <Star className="h-4 w-4" />
                   <span>Favorites</span>
                   <Badge variant="secondary" className="ml-auto">
-                    {bookmarks.filter((b) => b.isFavorite).length}
+                    {images.filter((b) => b.isFavorite).length}
                   </Badge>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -1062,7 +1062,7 @@ function AppSidebar({ bookmarks }: { bookmarks: any[] }) {
                   <SidebarMenuButton>
                     <span>{category}</span>
                     <Badge variant="secondary" className="ml-auto">
-                      {bookmarks.filter((b) => b.category === category).length}
+                      {images.filter((b) => b.category === category).length}
                     </Badge>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -1076,7 +1076,7 @@ function AppSidebar({ bookmarks }: { bookmarks: any[] }) {
           <div className="text-xs text-muted-foreground">
             <div className="flex justify-between">
               <span>Total Images</span>
-              <span>{bookmarks.length}</span>
+              <span>{images.length}</span>
             </div>
             <div className="flex justify-between">
               <span>This Month</span>
@@ -1084,7 +1084,7 @@ function AppSidebar({ bookmarks }: { bookmarks: any[] }) {
             </div>
             <div className="flex justify-between">
               <span>Favorites</span>
-              <span>{bookmarks.filter((b) => b.isFavorite).length}</span>
+              <span>{images.filter((b) => b.isFavorite).length}</span>
             </div>
           </div>
         </div>
@@ -1100,14 +1100,14 @@ export default function HomePage() {
   const [selectedStatus, setSelectedStatus] = useState("All")
   const [sortBy, setSortBy] = useState("lastVisited")
   const [viewMode, setViewMode] = useState("grid")
-  const [selectedBookmarks, setSelectedBookmarks] = useState<number[]>([])
+  const [selectedImages, setSelectedImages] = useState<number[]>([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false)
-  const [selectedBookmark, setSelectedBookmark] = useState<any>(null)
+  const [selectedImage, setSelectedImage] = useState<any>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [bookmarks, setBookmarks] = useState<any[]>([])
+  const [images, setImages] = useState<any[]>([])
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [bookmarkToDelete, setBookmarkToDelete] = useState<number | null>(null)
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null)
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
   const [configImported, setConfigImported] = useState(false) // 新增状态跟踪配置导入
   const [isLoadingData, setIsLoadingData] = useState(false) // 数据加载状态
@@ -1165,10 +1165,10 @@ export default function HomePage() {
     handleUrlConfig()
   }, [])
 
-  // 从配置文件和localStorage加载书签数据
+  // 从配置文件和localStorage加载图片数据
   useEffect(() => {
-    const loadBookmarks = async () => {
-      console.log('🔄 开始加载书签数据...')
+    const loadImages = async () => {
+      console.log('🔄 开始加载图片数据...')
       
       try {
         // 首先尝试从GitHub配置文件加载数据（跨浏览器共享）
@@ -1200,39 +1200,39 @@ export default function HomePage() {
         
         try {
           // 尝试从本地配置文件加载
-          const response = await fetch('./data/bookmarks.json')
+          const response = await fetch('./data/images.json')
           if (response.ok) {
             const configData = await response.json()
-            const jsonData = configData.bookmarks || configData // 兼容旧格式
-            console.log('✅ 成功从本地配置文件加载数据，书签数量:', jsonData.length)
+            const jsonData = configData.images || configData // 兼容旧格式
+            console.log('✅ 成功从本地配置文件加载数据，图片数量:', jsonData.length)
             
             // 检查localStorage是否有更新的数据
-            const savedBookmarks = localStorage.getItem('bookmarks')
-            if (savedBookmarks) {
+            const savedImages = localStorage.getItem('images')
+            if (savedImages) {
               try {
-                const localData = JSON.parse(savedBookmarks)
-                const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
+                const localData = JSON.parse(savedImages)
+                const localTimestamp = localStorage.getItem('images_timestamp') || '0'
                 const jsonTimestamp = localStorage.getItem('json_timestamp') || '0'
                 
                 // 如果localStorage数据更新，使用localStorage数据
                 if (localData.length > jsonData.length || localTimestamp > jsonTimestamp) {
                   console.log('📱 使用localStorage数据（更新）')
-                  setBookmarks(localData)
+                  setImages(localData)
                 } else {
                   console.log('📄 使用本地配置文件数据（最新）')
-                  setBookmarks(jsonData)
+                  setImages(jsonData)
                   // 同步到localStorage
-                  localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+                  localStorage.setItem('images', JSON.stringify(jsonData))
                   localStorage.setItem('json_timestamp', Date.now().toString())
                 }
               } catch (error) {
                 console.error('❌ 解析localStorage数据失败:', error)
-                setBookmarks(jsonData)
+                setImages(jsonData)
               }
             } else {
               console.log('📄 首次加载，使用本地配置文件数据')
-              setBookmarks(jsonData)
-              localStorage.setItem('bookmarks', JSON.stringify(jsonData))
+              setImages(jsonData)
+              localStorage.setItem('images', JSON.stringify(jsonData))
               localStorage.setItem('json_timestamp', Date.now().toString())
             }
           } else {
@@ -1242,25 +1242,25 @@ export default function HomePage() {
           console.log('⚠️ 无法从配置文件加载，尝试localStorage...')
           
           // 回退到localStorage
-          const savedBookmarks = localStorage.getItem('bookmarks')
-          if (savedBookmarks) {
+          const savedImages = localStorage.getItem('images')
+          if (savedImages) {
             try {
-              const parsed = JSON.parse(savedBookmarks)
-              console.log('✅ 成功加载localStorage数据，书签数量:', parsed.length)
-              setBookmarks(parsed)
+              const parsed = JSON.parse(savedImages)
+              console.log('✅ 成功加载localStorage数据，图片数量:', parsed.length)
+              setImages(parsed)
             } catch (error) {
               console.error('❌ 解析localStorage数据失败:', error)
-              setBookmarks(mockBookmarks)
+              setImages(mockImages)
             }
           } else {
             console.log('⚠️ 没有任何保存的数据，使用默认数据')
-            setBookmarks(mockBookmarks)
+            setImages(mockImages)
           }
         }
       }
     }
     
-    loadBookmarks()
+    loadImages()
   }, [configImported]) // 添加 configImported 作为依赖
 
   // 组件卸载时清理定时器
@@ -1289,21 +1289,21 @@ export default function HomePage() {
     }
 
     // 从GitHub获取配置文件
-    const githubUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/data/bookmarks.json`
+    const githubUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/data/images.json`
     const response = await fetch(githubUrl)
     
     if (response.ok) {
       const configData = await response.json()
       // 处理数据格式兼容性：支持简单数组和对象格式
-      const githubData = Array.isArray(configData) ? configData : (configData.bookmarks || [])
-      console.log('✅ 成功从GitHub配置文件加载数据，书签数量:', githubData.length)
+      const githubData = Array.isArray(configData) ? configData : (configData.images || [])
+      console.log('✅ 成功从GitHub配置文件加载数据，图片数量:', githubData.length)
       
       // 检查localStorage是否有更新的数据
-      const savedBookmarks = localStorage.getItem('bookmarks')
-      if (savedBookmarks) {
+      const savedImages = localStorage.getItem('images')
+      if (savedImages) {
         try {
-          const localData = JSON.parse(savedBookmarks)
-          const localTimestamp = localStorage.getItem('bookmarks_timestamp') || '0'
+          const localData = JSON.parse(savedImages)
+          const localTimestamp = localStorage.getItem('images_timestamp') || '0'
           // 对于数组格式的配置文件，使用当前时间作为时间戳
           const githubTimestamp = Array.isArray(configData) 
             ? Date.now().toString() 
@@ -1312,22 +1312,22 @@ export default function HomePage() {
           // 如果localStorage数据更新，使用localStorage数据
           if (localData.length > githubData.length || localTimestamp > githubTimestamp) {
             console.log('📱 使用localStorage数据（更新）')
-            setBookmarks(localData)
+            setImages(localData)
           } else {
             console.log('🌐 使用GitHub配置文件数据（最新）')
-            setBookmarks(githubData)
+            setImages(githubData)
             // 同步到localStorage
-            localStorage.setItem('bookmarks', JSON.stringify(githubData))
+            localStorage.setItem('images', JSON.stringify(githubData))
             localStorage.setItem('github_timestamp', githubTimestamp)
           }
         } catch (error) {
           console.error('❌ 解析localStorage数据失败:', error)
-          setBookmarks(githubData)
+          setImages(githubData)
         }
       } else {
         console.log('🌐 首次加载，使用GitHub配置文件数据')
-        setBookmarks(githubData)
-        localStorage.setItem('bookmarks', JSON.stringify(githubData))
+        setImages(githubData)
+        localStorage.setItem('images', JSON.stringify(githubData))
         // 对于数组格式的配置文件，使用当前时间作为时间戳
         const timestamp = Array.isArray(configData) 
           ? Date.now().toString() 
@@ -1339,39 +1339,39 @@ export default function HomePage() {
     }
   }
 
-  // 保存书签数据到localStorage和JSON文件
+  // 保存图片数据到localStorage和JSON文件
   useEffect(() => {
-    console.log('💾 保存书签数据，数量:', bookmarks.length)
-    if (bookmarks.length > 0) {
+    console.log('💾 保存图片数据，数量:', images.length)
+    if (images.length > 0) {
       try {
         // 保存到localStorage
-        localStorage.setItem('bookmarks', JSON.stringify(bookmarks))
-        localStorage.setItem('bookmarks_timestamp', Date.now().toString())
-        console.log('✅ 书签数据已保存到localStorage')
+        localStorage.setItem('images', JSON.stringify(images))
+        localStorage.setItem('images_timestamp', Date.now().toString())
+        console.log('✅ 图片数据已保存到localStorage')
         
         // 保存到JSON文件（异步，不阻塞UI）
-        saveToJsonFile(bookmarks)
+        saveToJsonFile(images)
       } catch (error) {
         console.error('❌ 保存数据失败:', error)
         alert('保存失败，请重试')
       }
     }
-  }, [bookmarks])
+  }, [images])
 
   // 保存数据到配置文件的函数（支持GitHub同步）
-  const saveToJsonFile = async (bookmarksData: any[]) => {
+  const saveToJsonFile = async (imagesData: any[]) => {
     try {
-      console.log('📄 开始保存书签配置...')
+      console.log('📄 开始保存图片配置...')
       
       // 检查是否为静态模式
       if (features.fileUpload) {
         // 服务器模式：使用API保存
-        const response = await fetch('/api/save-bookmarks', {
+        const response = await fetch('/api/save-images', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(bookmarksData),
+          body: JSON.stringify(imagesData),
         })
 
         const result = await response.json()
@@ -1382,7 +1382,7 @@ export default function HomePage() {
         }
       } else {
         // 静态模式：尝试同步到GitHub
-        await debouncedSaveToGitHub(bookmarksData)
+        await debouncedSaveToGitHub(imagesData)
       }
     } catch (error) {
       console.error('❌ 保存配置文件时发生错误:', error)
@@ -1393,7 +1393,7 @@ export default function HomePage() {
   const githubSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   // 防抖的GitHub同步函数
-  const debouncedSaveToGitHub = useCallback((bookmarksData: any[], operation?: string) => {
+  const debouncedSaveToGitHub = useCallback((imagesData: any[], operation?: string) => {
     // 清除之前的计时器
     if (githubSyncTimeoutRef.current) {
       clearTimeout(githubSyncTimeoutRef.current)
@@ -1401,14 +1401,14 @@ export default function HomePage() {
     
     // 设置新的计时器，3秒后执行同步
     githubSyncTimeoutRef.current = setTimeout(() => {
-      saveToGitHub(bookmarksData, operation)
+      saveToGitHub(imagesData, operation)
     }, 3000)
     
     console.log('⏳ GitHub同步已加入队列，3秒后执行...')
   }, [])
 
   // 保存到GitHub的函数
-  const saveToGitHub = async (bookmarksData: any[], operation?: string) => {
+  const saveToGitHub = async (imagesData: any[], operation?: string) => {
     try {
       const encryptedConfig = localStorage.getItem('github-encrypted-config')
       if (!encryptedConfig) {
@@ -1432,7 +1432,7 @@ export default function HomePage() {
 
       // 创建配置数据结构
       const configData = {
-        bookmarks: bookmarksData,
+        images: imagesData,
         lastUpdated: new Date().toISOString(),
         version: '1.0.0'
       }
@@ -1444,7 +1444,7 @@ export default function HomePage() {
         owner: config.owner,
         repo: config.repo,
         branch: config.branch,
-        path: 'data/bookmarks.json',
+        path: 'data/images.json',
         content: JSON.stringify(configData, null, 2),
         message: "提交",
         isBase64: false
@@ -1461,18 +1461,18 @@ export default function HomePage() {
     }
   }
 
-  const filteredBookmarks = useMemo(() => {
-    return bookmarks
-      .filter((bookmark) => {
+  const filteredImages = useMemo(() => {
+    return images
+      .filter((image) => {
         const matchesSearch =
-          bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          bookmark.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          bookmark.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          bookmark.notes.toLowerCase().includes(searchQuery.toLowerCase())
+          image.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          image.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          image.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          image.notes.toLowerCase().includes(searchQuery.toLowerCase())
 
-        const matchesCategory = selectedCategory === "All" || bookmark.category === selectedCategory
-        const matchesPriority = selectedPriority === "All" || bookmark.priority === selectedPriority.toLowerCase()
-        const matchesStatus = selectedStatus === "All" || bookmark.status === selectedStatus.toLowerCase()
+        const matchesCategory = selectedCategory === "All" || image.category === selectedCategory
+        const matchesPriority = selectedPriority === "All" || image.priority === selectedPriority.toLowerCase()
+        const matchesStatus = selectedStatus === "All" || image.status === selectedStatus.toLowerCase()
 
         return matchesSearch && matchesCategory && matchesPriority && matchesStatus
       })
@@ -1489,51 +1489,51 @@ export default function HomePage() {
             return new Date(b.lastVisited).getTime() - new Date(a.lastVisited).getTime()
         }
       })
-  }, [bookmarks, searchQuery, selectedCategory, selectedPriority, selectedStatus, sortBy])
+  }, [images, searchQuery, selectedCategory, selectedPriority, selectedStatus, sortBy])
 
-  const handleSelectBookmark = (bookmarkId: number, checked: boolean) => {
+  const handleSelectImage = (imageId: number, checked: boolean) => {
     if (checked) {
-      setSelectedBookmarks([...selectedBookmarks, bookmarkId])
+      setSelectedImages([...selectedImages, imageId])
     } else {
-      setSelectedBookmarks(selectedBookmarks.filter((id) => id !== bookmarkId))
+      setSelectedImages(selectedImages.filter((id) => id !== imageId))
     }
   }
 
   // 全选/取消全选功能
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookmarks(filteredBookmarks.map(bookmark => bookmark.id))
+      setSelectedImages(filteredImages.map(image => image.id))
     } else {
-      setSelectedBookmarks([])
+      setSelectedImages([])
     }
   }
 
   // 检查是否全选状态
-  const isAllSelected = filteredBookmarks.length > 0 && selectedBookmarks.length === filteredBookmarks.length
-  const isPartialSelected = selectedBookmarks.length > 0 && selectedBookmarks.length < filteredBookmarks.length
+  const isAllSelected = filteredImages.length > 0 && selectedImages.length === filteredImages.length
+  const isPartialSelected = selectedImages.length > 0 && selectedImages.length < filteredImages.length
 
   const handleBulkDelete = () => {
-    if (selectedBookmarks.length > 0) {
+    if (selectedImages.length > 0) {
       setBulkDeleteConfirmOpen(true)
     }
   }
 
   const confirmBulkDelete = async () => {
     try {
-      // 获取要删除的书签
-      const bookmarksToDelete = bookmarks.filter(bookmark => selectedBookmarks.includes(bookmark.id))
+      // 获取要删除的图片
+      const imagesToDelete = images.filter(image => selectedImages.includes(image.id))
       
       // 如果启用了文件删除功能，收集需要删除的文件路径
       if (features.fileDelete) {
         const filePaths: string[] = []
-        bookmarksToDelete.forEach(bookmark => {
+        imagesToDelete.forEach(image => {
           // 主截图
-          if (bookmark.screenshot && bookmark.screenshot.startsWith('/uploads/')) {
-            filePaths.push(bookmark.screenshot)
+          if (image.screenshot && image.screenshot.startsWith('/uploads/')) {
+            filePaths.push(image.screenshot)
           }
           // 附加图片
-          if (bookmark.additionalImages && Array.isArray(bookmark.additionalImages)) {
-            bookmark.additionalImages.forEach((imagePath: string) => {
+          if (image.additionalImages && Array.isArray(image.additionalImages)) {
+            image.additionalImages.forEach((imagePath: string) => {
               if (imagePath.startsWith('/uploads/')) {
                 filePaths.push(imagePath)
               }
@@ -1561,19 +1561,19 @@ export default function HomePage() {
         }
       }
 
-      // 从前端状态中移除书签
-      const updatedBookmarks = bookmarks.filter(bookmark => !selectedBookmarks.includes(bookmark.id))
-      setBookmarks(updatedBookmarks)
-      setSelectedBookmarks([])
+      // 从前端状态中移除图片
+      const updatedImages = images.filter(image => !selectedImages.includes(image.id))
+      setImages(updatedImages)
+      setSelectedImages([])
       setBulkDeleteConfirmOpen(false)
       
       // 立即更新localStorage
-      localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
-      localStorage.setItem('bookmarks_timestamp', Date.now().toString())
+      localStorage.setItem('images', JSON.stringify(updatedImages))
+      localStorage.setItem('images_timestamp', Date.now().toString())
       
       // 立即同步到配置文件（GitHub/JSON）
       try {
-        await saveToJsonFile(updatedBookmarks)
+        await saveToJsonFile(updatedImages)
         // 更新JSON时间戳，确保数据同步优先级正确
         localStorage.setItem('json_timestamp', Date.now().toString())
         console.log('✅ 批量删除操作已同步到配置文件')
@@ -1588,33 +1588,33 @@ export default function HomePage() {
     }
   }
 
-  const handleEdit = (bookmark: any) => {
-    console.log("Edit bookmark:", bookmark)
+  const handleEdit = (image: any) => {
+    console.log("Edit image:", image)
   }
 
-  const handleDelete = (bookmarkId: number) => {
-    setBookmarkToDelete(bookmarkId)
+  const handleDelete = (imageId: number) => {
+    setImageToDelete(imageId)
     setDeleteConfirmOpen(true)
   }
 
   const confirmDelete = async () => {
-    if (bookmarkToDelete) {
+    if (imageToDelete) {
       try {
-        // 获取要删除的书签
-        const bookmarkToDeleteObj = bookmarks.find(bookmark => bookmark.id === bookmarkToDelete)
+        // 获取要删除的图片
+        const imageToDeleteObj = images.find(image => image.id === imageToDelete)
         
-        if (bookmarkToDeleteObj && features.fileDelete) {
+        if (imageToDeleteObj && features.fileDelete) {
           // 收集需要删除的文件路径
           const filePaths: string[] = []
           
           // 主截图
-          if (bookmarkToDeleteObj.screenshot && bookmarkToDeleteObj.screenshot.startsWith('/uploads/')) {
-            filePaths.push(bookmarkToDeleteObj.screenshot)
+          if (imageToDeleteObj.screenshot && imageToDeleteObj.screenshot.startsWith('/uploads/')) {
+            filePaths.push(imageToDeleteObj.screenshot)
           }
           
           // 附加图片
-          if (bookmarkToDeleteObj.additionalImages && Array.isArray(bookmarkToDeleteObj.additionalImages)) {
-            bookmarkToDeleteObj.additionalImages.forEach((imagePath: string) => {
+          if (imageToDeleteObj.additionalImages && Array.isArray(imageToDeleteObj.additionalImages)) {
+            imageToDeleteObj.additionalImages.forEach((imagePath: string) => {
               if (imagePath.startsWith('/uploads/')) {
                 filePaths.push(imagePath)
               }
@@ -1641,17 +1641,17 @@ export default function HomePage() {
           }
         }
 
-        // 从前端状态中移除书签
-        const updatedBookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkToDelete)
-        setBookmarks(updatedBookmarks)
+        // 从前端状态中移除图片
+        const updatedImages = images.filter(image => image.id !== imageToDelete)
+        setImages(updatedImages)
         
         // 立即更新localStorage
-        localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
-        localStorage.setItem('bookmarks_timestamp', Date.now().toString())
+        localStorage.setItem('images', JSON.stringify(updatedImages))
+        localStorage.setItem('images_timestamp', Date.now().toString())
         
         // 立即同步到配置文件（GitHub/JSON）
         try {
-          await saveToJsonFile(updatedBookmarks)
+          await saveToJsonFile(updatedImages)
           // 更新JSON时间戳，确保数据同步优先级正确
           localStorage.setItem('json_timestamp', Date.now().toString())
           console.log('✅ 删除操作已同步到配置文件')
@@ -1660,7 +1660,7 @@ export default function HomePage() {
           // 不阻塞删除操作，但记录错误
         }
         
-        setBookmarkToDelete(null)
+        setImageToDelete(null)
       } catch (error) {
         console.error('❌ 删除失败:', error)
         alert('删除失败，请重试')
@@ -1669,37 +1669,37 @@ export default function HomePage() {
     setDeleteConfirmOpen(false)
   }
 
-  const handleAddBookmark = (newBookmark: any) => {
-    setBookmarks(prev => [...prev, newBookmark])
+  const handleAddImage = (newImage: any) => {
+    setImages(prev => [...prev, newImage])
   }
 
-  const handleBulkAddBookmarks = (newBookmarks: any[]) => {
-    console.log('📤 批量添加书签，新增数量:', newBookmarks.length)
-    setBookmarks(prev => {
-      const updated = [...prev, ...newBookmarks]
-      console.log('📊 更新后总书签数量:', updated.length)
+  const handleBulkAddImages = (newImages: any[]) => {
+    console.log('📤 批量添加图片，新增数量:', newImages.length)
+    setImages(prev => {
+      const updated = [...prev, ...newImages]
+      console.log('📊 更新后总图片数量:', updated.length)
       return updated
     })
   }
 
-  const handleViewDetails = (bookmark: any) => {
-    setSelectedBookmark(bookmark)
+  const handleViewDetails = (image: any) => {
+    setSelectedImage(image)
     setIsDetailModalOpen(true)
   }
 
-  const handleUpdateBookmark = (updatedBookmark: any) => {
-    setBookmarks(prevBookmarks =>
-      prevBookmarks.map(bookmark =>
-        bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark
+  const handleUpdateImage = (updatedImage: any) => {
+    setImages(prevImages =>
+      prevImages.map(image =>
+        image.id === updatedImage.id ? updatedImage : image
       )
     )
   }
 
-  const renderBookmarks = () => {
+  const renderImages = () => {
     if (viewMode === "kanban") {
-      const categorizedBookmarks = categories.slice(1).reduce(
+      const categorizedImages = categories.slice(1).reduce(
         (acc, category) => {
-          acc[category] = filteredBookmarks.filter((b) => b.category === category)
+          acc[category] = filteredImages.filter((b) => b.category === category)
           return acc
         },
         {} as Record<string, any[]>,
@@ -1707,20 +1707,20 @@ export default function HomePage() {
 
       return (
         <div className="grid grid-cols-6 gap-6">
-          {Object.entries(categorizedBookmarks).map(([category, bookmarks]) => (
+          {Object.entries(categorizedImages).map(([category, images]) => (
             <div key={category} className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">{category}</h3>
-                <Badge variant="secondary">{bookmarks.length}</Badge>
+                <Badge variant="secondary">{images.length}</Badge>
               </div>
               <div className="space-y-3">
-                {bookmarks.map((bookmark) => (
-                  <BookmarkCard
-                    key={bookmark.id}
-                    bookmark={bookmark}
+                {images.map((image) => (
+                  <ImageCard
+                    key={image.id}
+                    image={image}
                     viewMode={viewMode}
-                    isSelected={selectedBookmarks.includes(bookmark.id)}
-                    onSelect={(checked: boolean) => handleSelectBookmark(bookmark.id, checked)}
+                    isSelected={selectedImages.includes(image.id)}
+                    onSelect={(checked: boolean) => handleSelectImage(image.id, checked)}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onViewDetails={handleViewDetails}
@@ -1736,13 +1736,13 @@ export default function HomePage() {
     if (viewMode === "timeline") {
       return (
         <div className="max-w-3xl mx-auto">
-          {filteredBookmarks.map((bookmark) => (
-            <BookmarkCard
-              key={bookmark.id}
-              bookmark={bookmark}
+          {filteredImages.map((image) => (
+            <ImageCard
+              key={image.id}
+              image={image}
               viewMode={viewMode}
-              isSelected={selectedBookmarks.includes(bookmark.id)}
-              onSelect={(checked: boolean) => handleSelectBookmark(bookmark.id, checked)}
+              isSelected={selectedImages.includes(image.id)}
+              onSelect={(checked: boolean) => handleSelectImage(image.id, checked)}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewDetails={handleViewDetails}
@@ -1760,13 +1760,13 @@ export default function HomePage() {
 
     return (
       <div className={gridClasses[viewMode as keyof typeof gridClasses] || gridClasses.grid}>
-        {filteredBookmarks.map((bookmark) => (
-          <BookmarkCard
-            key={bookmark.id}
-            bookmark={bookmark}
+        {filteredImages.map((image) => (
+          <ImageCard
+            key={image.id}
+            image={image}
             viewMode={viewMode}
-            isSelected={selectedBookmarks.includes(bookmark.id)}
-            onSelect={(checked: boolean) => handleSelectBookmark(bookmark.id, checked)}
+            isSelected={selectedImages.includes(image.id)}
+            onSelect={(checked: boolean) => handleSelectImage(image.id, checked)}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onViewDetails={handleViewDetails}
@@ -1788,11 +1788,11 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Add Bookmark Button */}
+      {/* Add Image Button */}
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold">我的图片</h1>
-          {filteredBookmarks.length > 0 && (
+          {filteredImages.length > 0 && (
             <div className="flex items-center space-x-2">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -1810,10 +1810,10 @@ export default function HomePage() {
               </label>
             </div>
           )}
-          {selectedBookmarks.length > 0 && (
+          {selectedImages.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
-                已选择 {selectedBookmarks.length} 项
+                已选择 {selectedImages.length} 项
               </span>
               <Button
                 variant="destructive"
@@ -1835,10 +1835,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Bookmarks Display */}
-      {renderBookmarks()}
+      {/* Images Display */}
+      {renderImages()}
 
-      {filteredBookmarks.length === 0 && (
+      {filteredImages.length === 0 && (
         <div className="text-center py-12">
           <div className="h-24 w-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="h-12 w-12 text-muted-foreground" />
@@ -1849,29 +1849,29 @@ export default function HomePage() {
       )}
 
       {/* Add Image Dialog */}
-      <AddBookmarkDialog
+      <AddImageDialog
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onAddBookmark={handleAddBookmark}
+        onAddImage={handleAddImage}
       />
 
       {/* Simple Bulk Upload Dialog */}
       <SimpleBulkUploadDialog
         isOpen={isBulkUploadOpen}
         onClose={() => setIsBulkUploadOpen(false)}
-        onAddBookmarks={handleBulkAddBookmarks}
+        onAddImages={handleBulkAddImages}
       />
 
 
       {/* Detailed Image Modal */}
-      <DetailedBookmarkModal
-        bookmark={selectedBookmark}
+      <DetailedImageModal
+        image={selectedImage}
         isOpen={isDetailModalOpen}
         onClose={() => {
           setIsDetailModalOpen(false)
-          setSelectedBookmark(null)
+          setSelectedImage(null)
         }}
-        onUpdateBookmark={handleUpdateBookmark}
+        onUpdateImage={handleUpdateImage}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -1903,7 +1903,7 @@ export default function HomePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>确认批量删除</AlertDialogTitle>
             <AlertDialogDescription>
-              您确定要删除选中的 {selectedBookmarks.length} 个图片吗？此操作无法撤销。
+              您确定要删除选中的 {selectedImages.length} 个图片吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
