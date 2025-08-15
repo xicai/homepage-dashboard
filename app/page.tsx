@@ -1465,10 +1465,10 @@ export default function HomePage() {
     return images
       .filter((image) => {
         const matchesSearch =
-          image.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          image.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          image.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          image.notes.toLowerCase().includes(searchQuery.toLowerCase())
+          image.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          image.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          image.tags?.some((tag: string) => tag?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          image.notes?.toLowerCase().includes(searchQuery.toLowerCase())
 
         const matchesCategory = selectedCategory === "All" || image.category === selectedCategory
         const matchesPriority = selectedPriority === "All" || image.priority === selectedPriority.toLowerCase()
