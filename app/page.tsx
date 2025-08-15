@@ -1437,32 +1437,6 @@ export default function HomePage() {
         version: '1.0.0'
       }
 
-      // 生成更有意义的提交信息
-      const generateCommitMessage = (operation?: string) => {
-        const timestamp = new Date().toLocaleString('zh-CN', { 
-          timeZone: 'Asia/Shanghai',
-          year: 'numeric',
-          month: '2-digit', 
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-        
-        if (operation) {
-          return `${operation} - ${timestamp}`
-        }
-        
-        // 检查最近的操作时间，避免频繁提交
-        const lastSync = localStorage.getItem('last_github_sync')
-        if (lastSync) {
-          const timeDiff = Date.now() - parseInt(lastSync)
-          if (timeDiff < 300000) { // 5分钟内
-            return `批量更新书签数据 - ${timestamp}`
-          }
-        }
-        
-        return `同步书签配置 - ${timestamp}`
-      }
 
       // 上传到GitHub
       const result = await githubUploader.uploadFile({
@@ -1472,7 +1446,7 @@ export default function HomePage() {
         branch: config.branch,
         path: 'data/bookmarks.json',
         content: JSON.stringify(configData, null, 2),
-        message: generateCommitMessage(operation),
+        message: "提交",
         isBase64: false
       })
 
