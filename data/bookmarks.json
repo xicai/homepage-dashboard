@@ -563,6 +563,46 @@
       "aspectRatio": 1.7777777777777777
     },
     {
+      "id": 1755184739939,
+      "title": "永恩",
+      "url": "https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755184737492.jpg",
+      "description": "上传到GitHub的图片: 永恩.jpg",
+      "favicon": "/placeholder.svg",
+      "screenshot": "https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755184737492.jpg",
+      "category": "GitHub图片",
+      "priority": "medium",
+      "tags": [
+        "GitHub",
+        "图片",
+        "上传"
+      ],
+      "lastVisited": "2025-08-14",
+      "visitCount": 0,
+      "status": "active",
+      "notes": "GitHub链接: https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755184737492.jpg",
+      "dateAdded": "2025-08-14",
+      "isFavorite": false,
+      "timeSpent": "0m",
+      "weeklyVisits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "relatedSites": [],
+      "lastUpdate": "2025-08-14T15:18:59.929Z",
+      "siteHealth": "good",
+      "loadTime": "0.5s",
+      "mobileOptimized": true,
+      "additionalImages": [],
+      "imageWidth": 1920,
+      "imageHeight": 1080,
+      "aspectRatio": 1.7777777777777777
+    },
+    {
       "id": 1755184742612,
       "title": "自由之翼",
       "url": "https://raw.githubusercontent.com/xicai/homepage-dashboard/master/uploads/1755184739940.jpg",
@@ -683,6 +723,6 @@
       "aspectRatio": 1.8530351437699681
     }
   ],
-  "lastUpdated": "2025-08-15T02:22:20.560Z",
+  "lastUpdated": "2025-08-15T03:07:49.624Z",
   "version": "1.0.0"
 }
