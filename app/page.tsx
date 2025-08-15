@@ -1534,13 +1534,25 @@ export default function HomePage() {
       }
 
       // 从前端状态中移除书签
-      setBookmarks(prev => prev.filter(bookmark => !selectedBookmarks.includes(bookmark.id)))
+      const updatedBookmarks = bookmarks.filter(bookmark => !selectedBookmarks.includes(bookmark.id))
+      setBookmarks(updatedBookmarks)
       setSelectedBookmarks([])
       setBulkDeleteConfirmOpen(false)
       
-      // 更新localStorage
-      const updatedBookmarks = bookmarks.filter(bookmark => !selectedBookmarks.includes(bookmark.id))
+      // 立即更新localStorage
       localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
+      localStorage.setItem('bookmarks_timestamp', Date.now().toString())
+      
+      // 立即同步到配置文件（GitHub/JSON）
+      try {
+        await saveToJsonFile(updatedBookmarks)
+        // 更新JSON时间戳，确保数据同步优先级正确
+        localStorage.setItem('json_timestamp', Date.now().toString())
+        console.log('✅ 批量删除操作已同步到配置文件')
+      } catch (error) {
+        console.error('❌ 同步到配置文件失败:', error)
+        // 不阻塞删除操作，但记录错误
+      }
       
     } catch (error) {
       console.error('❌ 批量删除失败:', error)
@@ -1602,11 +1614,23 @@ export default function HomePage() {
         }
 
         // 从前端状态中移除书签
-        setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkToDelete))
-        
-        // 更新localStorage
         const updatedBookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkToDelete)
+        setBookmarks(updatedBookmarks)
+        
+        // 立即更新localStorage
         localStorage.setItem('bookmarks', JSON.stringify(updatedBookmarks))
+        localStorage.setItem('bookmarks_timestamp', Date.now().toString())
+        
+        // 立即同步到配置文件（GitHub/JSON）
+        try {
+          await saveToJsonFile(updatedBookmarks)
+          // 更新JSON时间戳，确保数据同步优先级正确
+          localStorage.setItem('json_timestamp', Date.now().toString())
+          console.log('✅ 删除操作已同步到配置文件')
+        } catch (error) {
+          console.error('❌ 同步到配置文件失败:', error)
+          // 不阻塞删除操作，但记录错误
+        }
         
         setBookmarkToDelete(null)
       } catch (error) {
