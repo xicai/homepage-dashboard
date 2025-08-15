@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useRef, useEffect, useCallback } from "react"
 import { features } from "@/lib/config"
 import SimpleBulkUploadDialog from "@/components/simple-bulk-upload"
 import { ConfigGenerator } from "@/components/config-generator"
@@ -1263,6 +1263,15 @@ export default function HomePage() {
     loadBookmarks()
   }, [configImported]) // 添加 configImported 作为依赖
 
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (githubSyncTimeoutRef.current) {
+        clearTimeout(githubSyncTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // 从GitHub加载配置的函数
   const loadFromGitHub = async () => {
     const encryptedConfig = localStorage.getItem('github-encrypted-config')
@@ -1373,15 +1382,33 @@ export default function HomePage() {
         }
       } else {
         // 静态模式：尝试同步到GitHub
-        await saveToGitHub(bookmarksData)
+        await debouncedSaveToGitHub(bookmarksData)
       }
     } catch (error) {
       console.error('❌ 保存配置文件时发生错误:', error)
     }
   }
 
+  // GitHub同步防抖计时器引用
+  const githubSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // 防抖的GitHub同步函数
+  const debouncedSaveToGitHub = useCallback((bookmarksData: any[], operation?: string) => {
+    // 清除之前的计时器
+    if (githubSyncTimeoutRef.current) {
+      clearTimeout(githubSyncTimeoutRef.current)
+    }
+    
+    // 设置新的计时器，3秒后执行同步
+    githubSyncTimeoutRef.current = setTimeout(() => {
+      saveToGitHub(bookmarksData, operation)
+    }, 3000)
+    
+    console.log('⏳ GitHub同步已加入队列，3秒后执行...')
+  }, [])
+
   // 保存到GitHub的函数
-  const saveToGitHub = async (bookmarksData: any[]) => {
+  const saveToGitHub = async (bookmarksData: any[], operation?: string) => {
     try {
       const encryptedConfig = localStorage.getItem('github-encrypted-config')
       if (!encryptedConfig) {
@@ -1410,6 +1437,33 @@ export default function HomePage() {
         version: '1.0.0'
       }
 
+      // 生成更有意义的提交信息
+      const generateCommitMessage = (operation?: string) => {
+        const timestamp = new Date().toLocaleString('zh-CN', { 
+          timeZone: 'Asia/Shanghai',
+          year: 'numeric',
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+        
+        if (operation) {
+          return `${operation} - ${timestamp}`
+        }
+        
+        // 检查最近的操作时间，避免频繁提交
+        const lastSync = localStorage.getItem('last_github_sync')
+        if (lastSync) {
+          const timeDiff = Date.now() - parseInt(lastSync)
+          if (timeDiff < 300000) { // 5分钟内
+            return `批量更新书签数据 - ${timestamp}`
+          }
+        }
+        
+        return `同步书签配置 - ${timestamp}`
+      }
+
       // 上传到GitHub
       const result = await githubUploader.uploadFile({
         token: config.token,
@@ -1418,7 +1472,7 @@ export default function HomePage() {
         branch: config.branch,
         path: 'data/bookmarks.json',
         content: JSON.stringify(configData, null, 2),
-        message: `更新书签配置 - ${new Date().toLocaleString()}`,
+        message: generateCommitMessage(operation),
         isBase64: false
       })
 
@@ -1548,6 +1602,10 @@ export default function HomePage() {
         await saveToJsonFile(updatedBookmarks)
         // 更新JSON时间戳，确保数据同步优先级正确
         localStorage.setItem('json_timestamp', Date.now().toString())
+        // 对于删除操作，使用防抖并传递操作类型
+        if (!features.fileUpload) {
+          await debouncedSaveToGitHub(updatedBookmarks, '批量删除书签')
+        }
         console.log('✅ 批量删除操作已同步到配置文件')
       } catch (error) {
         console.error('❌ 同步到配置文件失败:', error)
@@ -1626,6 +1684,10 @@ export default function HomePage() {
           await saveToJsonFile(updatedBookmarks)
           // 更新JSON时间戳，确保数据同步优先级正确
           localStorage.setItem('json_timestamp', Date.now().toString())
+          // 对于删除操作，使用防抖并传递操作类型
+          if (!features.fileUpload) {
+            await debouncedSaveToGitHub(updatedBookmarks, '删除书签')
+          }
           console.log('✅ 删除操作已同步到配置文件')
         } catch (error) {
           console.error('❌ 同步到配置文件失败:', error)
