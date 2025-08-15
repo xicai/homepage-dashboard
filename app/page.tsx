@@ -1602,10 +1602,6 @@ export default function HomePage() {
         await saveToJsonFile(updatedBookmarks)
         // 更新JSON时间戳，确保数据同步优先级正确
         localStorage.setItem('json_timestamp', Date.now().toString())
-        // 对于删除操作，使用防抖并传递操作类型
-        if (!features.fileUpload) {
-          await debouncedSaveToGitHub(updatedBookmarks, '批量删除书签')
-        }
         console.log('✅ 批量删除操作已同步到配置文件')
       } catch (error) {
         console.error('❌ 同步到配置文件失败:', error)
@@ -1684,10 +1680,6 @@ export default function HomePage() {
           await saveToJsonFile(updatedBookmarks)
           // 更新JSON时间戳，确保数据同步优先级正确
           localStorage.setItem('json_timestamp', Date.now().toString())
-          // 对于删除操作，使用防抖并传递操作类型
-          if (!features.fileUpload) {
-            await debouncedSaveToGitHub(updatedBookmarks, '删除书签')
-          }
           console.log('✅ 删除操作已同步到配置文件')
         } catch (error) {
           console.error('❌ 同步到配置文件失败:', error)
