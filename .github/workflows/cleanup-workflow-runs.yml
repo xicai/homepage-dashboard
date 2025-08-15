@@ -1,0 +1,81 @@
+name: Cleanup Workflow Runs
+
+on:
+  schedule:
+    # 每天凌晨 2 点执行清理
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: '保留天数 (默认 30 天)'
+        required: false
+        default: '30'
+        type: string
+      keep_minimum:
+        description: '最少保留运行数 (默认 10 个)'
+        required: false
+        default: '10'
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Delete old workflow runs
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: ${{ github.event.inputs.days || 30 }}
+        keep_minimum_runs: ${{ github.event.inputs.keep_minimum || 10 }}
+        # 只清理 deploy.yml 工作流的运行记录
+        delete_workflow_pattern: 'Deploy to GitHub Pages'
+        # 删除失败和取消的运行
+        delete_run_by_conclusion_pattern: 'failure,cancelled'
+
+    - name: Delete old workflow runs (alternative method)
+      if: failure()
+      run: |
+        # 如果上面的 action 失败，使用 GitHub CLI 作为备选方案
+        
+        DAYS_TO_KEEP=${{ github.event.inputs.days || 30 }}
+        KEEP_MINIMUM=${{ github.event.inputs.keep_minimum || 10 }}
+        
+        echo "清理 $DAYS_TO_KEEP 天前的工作流运行记录，至少保留 $KEEP_MINIMUM 个"
+        
+        # 获取 deploy.yml 工作流的 ID
+        WORKFLOW_ID=$(gh api repos/${{ github.repository }}/actions/workflows --jq '.workflows[] | select(.name == "Deploy to GitHub Pages") | .id')
+        
+        if [ -n "$WORKFLOW_ID" ]; then
+          echo "找到工作流 ID: $WORKFLOW_ID"
+          
+          # 获取工作流运行列表
+          gh api repos/${{ github.repository }}/actions/workflows/$WORKFLOW_ID/runs \
+            --paginate \
+            --jq '.workflow_runs[] | select(.created_at < (now - ('"$DAYS_TO_KEEP"' * 24 * 3600))) | .id' \
+            | head -n -$KEEP_MINIMUM \
+            | while read run_id; do
+              if [ -n "$run_id" ]; then
+                echo "删除运行记录: $run_id"
+                gh api repos/${{ github.repository }}/actions/runs/$run_id -X DELETE || echo "删除失败: $run_id"
+              fi
+            done
+        else
+          echo "未找到 'Deploy to GitHub Pages' 工作流"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cleanup summary
+      run: |
+        echo "### 工作流清理完成 🧹" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- 保留天数: ${{ github.event.inputs.days || 30 }} 天" >> $GITHUB_STEP_SUMMARY
+        echo "- 最少保留: ${{ github.event.inputs.keep_minimum || 10 }} 个运行记录" >> $GITHUB_STEP_SUMMARY
+        echo "- 清理时间: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- 目标工作流: Deploy to GitHub Pages" >> $GITHUB_STEP_SUMMARY
